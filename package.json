@@ -11,7 +11,7 @@
     "build": "npm run build:web && npm run build:admin",
     "build:web": "npm run build -w @swankk/web",
     "build:admin": "npm run build -w @swankk/admin",
-    "deploy": "npm run deploy:web && npm run deploy:admin",
+    "deploy": "npm run build && npm run deploy:web && npm run deploy:admin",
     "deploy:web": "npm run deploy -w @swankk/web",
     "deploy:admin": "npm run deploy -w @swankk/admin",
     "setup": "node scripts/setup.js",
