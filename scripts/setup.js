@@ -22,24 +22,30 @@ console.log('='.repeat(60));
 console.log('\n1. Creating D1 database...');
 run('npx wrangler d1 create swankk-db');
 
-console.log('\n2. Applying schema...');
+console.log('\n2. Creating R2 bucket...');
+run('npx wrangler r2 bucket create swankk-assets');
+
+console.log('\n3. Applying schema...');
 run('npx wrangler d1 execute swankk-db --remote --file=schema.sql');
 
-console.log('\n3. Setting secrets...');
+console.log('\n4. Setting secrets (web)...');
 console.log(`   SITE_SECRET = ${siteSecret}`);
 console.log(`   SWANKK_JWT_SECRET = ${jwtSecret}`);
 run(`echo "${siteSecret}" | npx wrangler pages secret put SITE_SECRET --project-name swankk`);
 run(`echo "${jwtSecret}" | npx wrangler pages secret put SWANKK_JWT_SECRET --project-name swankk`);
 
-console.log('\n4. Building & deploying...');
+console.log('\n5. Setting secrets (admin)...');
+run(`echo "${siteSecret}" | npx wrangler pages secret put SITE_SECRET --project-name swankk-admin`);
+run(`echo "${jwtSecret}" | npx wrangler pages secret put SWANKK_JWT_SECRET --project-name swankk-admin`);
+
+console.log('\n6. Building & deploying...');
 run('npm run deploy');
 
 console.log('\n' + '='.repeat(60));
-console.log('  DONE! Your site is live.');
+console.log('  DONE! Both sites are live.');
 console.log('='.repeat(60));
 console.log(`\n  Share this link (keep it private):\n`);
 console.log(`  https://swankk.pages.dev/?access=${siteSecret}`);
 console.log(`\n  Admin panel:\n`);
-console.log(`  https://swankk.pages.dev/Admin`);
-console.log(`  (accessible once you've opened the link above)`);
+console.log(`  https://swankk-admin.pages.dev/?access=${siteSecret}`);
 console.log('\n' + '='.repeat(60));
