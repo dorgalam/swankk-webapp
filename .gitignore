@@ -18,3 +18,8 @@ npm-debug.log*
 .DS_Store
 *.suo
 *.sw?
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/

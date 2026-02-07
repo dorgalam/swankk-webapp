@@ -5,24 +5,40 @@ import {
 } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
 import DashboardIcon from '@mui/icons-material/Dashboard'
-import { Outlet, useNavigate } from 'react-router-dom'
+import BrushIcon from '@mui/icons-material/Brush'
+import InboxIcon from '@mui/icons-material/Inbox'
+import PeopleIcon from '@mui/icons-material/People'
+import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 
 const DRAWER_WIDTH = 240
 
 const navItems = [
   { label: 'Dashboard', icon: <DashboardIcon />, path: '/' },
+  { label: 'Designers', icon: <BrushIcon />, path: '/designers' },
+  { label: 'Requests', icon: <InboxIcon />, path: '/requests' },
+  { label: 'Users', icon: <PeopleIcon />, path: '/users' },
 ]
 
 export default function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const navigate = useNavigate()
+  const location = useLocation()
+
+  const isActive = (path) => {
+    if (path === '/') return location.pathname === '/'
+    return location.pathname.startsWith(path)
+  }
 
   const drawer = (
     <Box>
       <Toolbar />
       <List>
         {navItems.map(({ label, icon, path }) => (
-          <ListItemButton key={path} onClick={() => { navigate(path); setMobileOpen(false) }}>
+          <ListItemButton
+            key={path}
+            selected={isActive(path)}
+            onClick={() => { navigate(path); setMobileOpen(false) }}
+          >
             <ListItemIcon>{icon}</ListItemIcon>
             <ListItemText primary={label} />
           </ListItemButton>
