@@ -5,3 +5,4 @@ pages_build_output_dir = "dist"
 [[d1_databases]]
 binding = "DB"
 database_name = "swankk-db"
+database_id = "b2a73d0c-36a1-49a5-a70c-c5b46c917c96"
