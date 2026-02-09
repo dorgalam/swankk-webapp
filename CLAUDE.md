@@ -23,8 +23,8 @@ webapp/                          (repo root — npm workspaces)
 ```bash
 npm run dev:web          # vite dev server for web
 npm run dev:admin        # vite dev server for admin
-npm run dev:web:full     # wrangler pages dev (with D1) for web
-npm run dev:admin:full   # wrangler pages dev (with D1) for admin
+npm run dev:web:full     # wrangler pages dev (with D1 + R2) for web
+npm run dev:admin:full   # wrangler pages dev (with D1 + R2) for admin
 npm run build:web        # vite build web
 npm run build:admin      # vite build admin
 npm run build            # build both
@@ -38,6 +38,7 @@ npm run deploy           # build + deploy both
 - **Database**: Cloudflare D1 (SQLite) — binding `DB`, database `swankk-db`, id `b2a73d0c-36a1-49a5-a70c-c5b46c917c96`
 - **Storage**: Cloudflare R2 — binding `ASSETS_BUCKET`, bucket `swankk-assets`
 - **Both projects share** the same D1 database and R2 bucket
+- **R2 asset uploads**: `POST /api/admin/upload` (FormData with `file` + `folder`), served at `GET /api/assets/{key}` in both packages
 
 ## Cloudflare Pages Projects
 | Project | Build command | Output dir |
@@ -61,4 +62,10 @@ npm run deploy           # build + deploy both
 - Package scripts do one thing (build and deploy are separate)
 - `functions/` uses Cloudflare Pages file-based routing (`onRequestGet`, `onRequestPost`, etc.)
 - Admin API endpoints live under `functions/api/admin/`
+- Asset serving endpoints at `functions/api/assets/[[path]].js` (catch-all) in both packages
 - SQL queries go through `context.env.DB.prepare()` (D1 binding)
+- R2 uploads go through `context.env.ASSETS_BUCKET.put()` / `.get()`
+
+## Dev Notes
+- **wrangler 4.63+**: The `-- command` proxy syntax is deprecated. Use `--proxy=PORT` instead (run vite on a port, then `wrangler pages dev --proxy=PORT --d1=DB --r2=ASSETS_BUCKET`)
+- The `dev:full` scripts in package.json may need updating if wrangler drops the deprecated syntax entirely

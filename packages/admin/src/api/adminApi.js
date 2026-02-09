@@ -146,6 +146,23 @@ const adminApi = {
     },
   },
 
+  assets: {
+    async upload(file, folder) {
+      const formData = new FormData()
+      formData.append('file', file)
+      if (folder) formData.append('folder', folder)
+      const res = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData,
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || `Upload failed: ${res.status}`)
+      }
+      return res.json()
+    },
+  },
+
   users: {
     async list() {
       const { results } = await query(`

@@ -10,6 +10,7 @@ import DeleteIcon from '@mui/icons-material/Delete'
 import SaveIcon from '@mui/icons-material/Save'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import adminApi, { slugify } from '@/api/adminApi'
+import UrlOrUploadField from '@/components/UrlOrUploadField'
 
 const emptyDesigner = {
   name: '', slug: '', phonetic: '', audio_url: '', origin_meaning: '',
@@ -130,7 +131,7 @@ export default function DesignerForm() {
       {/* Basic Info */}
       <Paper sx={{ p: 3, mb: 3 }}>
         <Typography variant="subtitle2" gutterBottom>Basic Info</Typography>
-        {['name', 'slug', 'phonetic', 'audio_url', 'origin_meaning', 'hero_image_url'].map((field) => (
+        {['name', 'slug', 'phonetic', 'origin_meaning'].map((field) => (
           <TextField
             key={field}
             label={field.replace(/_/g, ' ')}
@@ -142,6 +143,20 @@ export default function DesignerForm() {
             sx={{ mb: 2, textTransform: 'capitalize' }}
           />
         ))}
+        <UrlOrUploadField
+          label="audio url"
+          value={form.audio_url}
+          onChange={(url) => updateField('audio_url', url)}
+          accept="audio/*"
+          folder="audio"
+        />
+        <UrlOrUploadField
+          label="hero image url"
+          value={form.hero_image_url}
+          onChange={(url) => updateField('hero_image_url', url)}
+          accept="image/*"
+          folder="images"
+        />
       </Paper>
 
       {/* Facts */}
