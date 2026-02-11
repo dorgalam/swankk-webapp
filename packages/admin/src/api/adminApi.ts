@@ -15,7 +15,7 @@ interface DesignerRow {
   founded_year: string
   origin_location: string
   creative_director: string
-  known_for_tags: string | string[]
+  known_for_tags: string | Tag[]
   eras: string | Era[]
   signature_pieces: string | Piece[]
   created_at?: string
@@ -23,25 +23,29 @@ interface DesignerRow {
 }
 
 interface Designer extends Omit<DesignerRow, 'known_for_tags' | 'eras' | 'signature_pieces'> {
-  known_for_tags: string[]
+  known_for_tags: Tag[]
   eras: Era[]
   signature_pieces: Piece[]
+}
+
+interface Tag {
+  name: string
+  description: string
 }
 
 interface Era {
   title: string
   year_range: string
-  image_url: string
-  caption: string
-  credit: string
+  description: string
+  images: string[]
+  image_url?: string
+  caption?: string
 }
 
 interface Piece {
   name: string
   image_url: string
-  brand: string
-  price: string
-  farfetch_url: string
+  link: string
 }
 
 interface DesignerInput {
@@ -55,7 +59,7 @@ interface DesignerInput {
   founded_year?: string
   origin_location?: string
   creative_director?: string
-  known_for_tags?: string[]
+  known_for_tags?: Tag[]
   eras?: Era[]
   signature_pieces?: Piece[]
   [key: string]: unknown
@@ -264,4 +268,4 @@ const adminApi = {
 
 export default adminApi
 export { slugify }
-export type { Designer, DesignerInput, DesignerRequest, DesignerRow, Era, Piece, StatCounts, User }
+export type { Designer, DesignerInput, DesignerRequest, DesignerRow, Era, Piece, StatCounts, Tag, User }
