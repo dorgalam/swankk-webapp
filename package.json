@@ -15,6 +15,7 @@
     "deploy:web": "npm run deploy -w @swankk/web",
     "deploy:admin": "npm run deploy -w @swankk/admin",
     "setup": "node scripts/setup.js",
+    "typecheck": "npm run typecheck -w @swankk/web && npm run typecheck -w @swankk/admin",
     "lint": "npm run lint -w @swankk/web",
     "lint:fix": "npm run lint:fix -w @swankk/web"
   }
