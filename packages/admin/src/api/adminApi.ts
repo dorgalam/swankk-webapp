@@ -139,18 +139,18 @@ interface TrendInput {
   [key: string]: unknown
 }
 
-// The closed list of 49 keywords (designer names)
+// The closed list of style keywords
 export const KEYWORDS_LIST = [
-  'Louis Vuitton', 'Chanel', 'Dior', 'Gucci', 'Prada',
-  'Saint Laurent', 'Balenciaga', 'Versace', 'Bottega Veneta', 'Schiaparelli',
-  'Alaïa', 'Fendi', 'Valentino', 'Burberry', 'Loewe',
-  'Givenchy', 'Chloé', 'Miu Miu', 'Acne Studios', 'Jacquemus',
-  'Maison Margiela', 'Tom Ford', 'Ralph Lauren', 'Dolce & Gabbana', 'Mugler',
-  'Vivienne Westwood', 'Stella McCartney', 'Issey Miyake', 'Rick Owens', 'JW Anderson',
-  'Celine', 'Jil Sander', 'Dries Van Noten', 'Thom Browne', 'Ferragamo',
-  'Marc Jacobs', 'Coach', 'Jean Paul Gaultier', 'Kenzo', 'Max Mara',
-  'Brunello Cucinelli', 'The Row', 'Alexander McQueen', 'Coperni', 'Courrèges',
-  'Giorgio Armani', 'Isabel Marant', 'Marni', 'Hermès',
+  'Minimalist', 'Maximalist', 'Avant-garde', 'Classic', 'Romantic',
+  'Futuristic', 'Streetwear', 'Couture', 'Tailoring', 'Deconstruction',
+  'Bohemian', 'Glamour', 'Sporty', 'Utility', 'Heritage',
+  'Artisanal', 'Industrial', 'Sculptural', 'Androgynous', 'Gender-fluid',
+  'Opulent', 'Preppy', 'Punk', 'Grunge', 'Gothic',
+  'Modernist', 'Postmodern', 'Baroque', 'Techwear', 'Sustainable',
+  'Experimental', 'Monochrome', 'Print-driven', 'Logo-centric', 'Architectural',
+  'Fluid', 'Structured', 'Raw', 'Polished', 'Conceptual',
+  'Provocative', 'Feminine', 'Masculine', 'Eclectic', 'Refined',
+  'Youthful', 'Retro', 'Luxury', 'Accessible', 'Performance',
 ]
 
 async function query(sql: string, params: unknown[] = []): Promise<QueryResult> {
