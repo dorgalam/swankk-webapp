@@ -15,6 +15,7 @@
     "deploy": "npm run build && npm run deploy:web && npm run deploy:admin",
     "deploy:web": "npm run deploy -w @swankk/web",
     "deploy:admin": "npm run deploy -w @swankk/admin",
+    "db:backup": "npx wrangler d1 export swankk-db --remote --output ./backups/db-$(date +%Y-%m-%d).sql",
     "setup": "node scripts/setup.js",
     "typecheck": "npm run typecheck -w @swankk/web && npm run typecheck -w @swankk/admin",
     "lint": "npm run lint -w @swankk/web",
