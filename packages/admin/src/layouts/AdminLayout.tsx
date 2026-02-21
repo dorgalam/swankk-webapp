@@ -8,6 +8,8 @@ import DashboardIcon from '@mui/icons-material/Dashboard'
 import BrushIcon from '@mui/icons-material/Brush'
 import InboxIcon from '@mui/icons-material/Inbox'
 import PeopleIcon from '@mui/icons-material/People'
+import LabelIcon from '@mui/icons-material/Label'
+import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 
 const DRAWER_WIDTH = 240
@@ -15,6 +17,8 @@ const DRAWER_WIDTH = 240
 const navItems = [
   { label: 'Dashboard', icon: <DashboardIcon />, path: '/' },
   { label: 'Designers', icon: <BrushIcon />, path: '/designers' },
+  { label: 'Keywords', icon: <LabelIcon />, path: '/keywords' },
+  { label: 'Trends', icon: <TrendingUpIcon />, path: '/trends' },
   { label: 'Requests', icon: <InboxIcon />, path: '/requests' },
   { label: 'Users', icon: <PeopleIcon />, path: '/users' },
 ]

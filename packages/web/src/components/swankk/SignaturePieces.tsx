@@ -50,7 +50,7 @@ export default function SignaturePieces({ designer }: { designer: any }) {
         {designer.signature_pieces.map((piece: any, i: number) => (
           <a
             key={i}
-            href={piece.farfetch_url}
+            href={piece.link || piece.farfetch_url}
             target="_blank"
             rel="noopener noreferrer"
             className="flex-shrink-0 w-56 group cursor-pointer"
@@ -63,7 +63,6 @@ export default function SignaturePieces({ designer }: { designer: any }) {
               />
             </div>
             <p className="text-sm font-medium text-black leading-tight line-clamp-2">{piece.name}</p>
-            <p className="text-xs text-gray-400 mt-1">{piece.brand}</p>
           </a>
         ))}
       </div>

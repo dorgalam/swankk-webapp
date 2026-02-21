@@ -89,6 +89,70 @@ interface StatCounts {
   [key: string]: number
 }
 
+interface Keyword {
+  id: number
+  name: string
+  slug: string
+  description: string
+  designer_count?: number
+  created_at?: string
+  updated_at?: string
+}
+
+interface TrendRow {
+  id: number
+  name: string
+  slug: string
+  context: string
+  designer_slugs: string | string[]
+  preview_images: string | string[]
+  images: string | string[]
+  keywords: string | string[]
+  products: string | TrendProduct[]
+  created_at?: string
+  updated_at?: string
+}
+
+interface Trend extends Omit<TrendRow, 'designer_slugs' | 'preview_images' | 'images' | 'keywords' | 'products'> {
+  designer_slugs: string[]
+  preview_images: string[]
+  images: string[]
+  keywords: string[]
+  products: TrendProduct[]
+}
+
+interface TrendProduct {
+  name: string
+  image_url: string
+  link: string
+}
+
+interface TrendInput {
+  name: string
+  slug?: string
+  context?: string
+  designer_slugs?: string[]
+  preview_images?: string[]
+  images?: string[]
+  keywords?: string[]
+  products?: TrendProduct[]
+  [key: string]: unknown
+}
+
+// The closed list of 49 keywords (designer names)
+export const KEYWORDS_LIST = [
+  'Louis Vuitton', 'Chanel', 'Dior', 'Gucci', 'Prada',
+  'Saint Laurent', 'Balenciaga', 'Versace', 'Bottega Veneta', 'Schiaparelli',
+  'Alaïa', 'Fendi', 'Valentino', 'Burberry', 'Loewe',
+  'Givenchy', 'Chloé', 'Miu Miu', 'Acne Studios', 'Jacquemus',
+  'Maison Margiela', 'Tom Ford', 'Ralph Lauren', 'Dolce & Gabbana', 'Mugler',
+  'Vivienne Westwood', 'Stella McCartney', 'Issey Miyake', 'Rick Owens', 'JW Anderson',
+  'Celine', 'Jil Sander', 'Dries Van Noten', 'Thom Browne', 'Ferragamo',
+  'Marc Jacobs', 'Coach', 'Jean Paul Gaultier', 'Kenzo', 'Max Mara',
+  'Brunello Cucinelli', 'The Row', 'Alexander McQueen', 'Coperni', 'Courrèges',
+  'Giorgio Armani', 'Isabel Marant', 'Marni', 'Hermès',
+]
+
 async function query(sql: string, params: unknown[] = []): Promise<QueryResult> {
   const res = await fetch('/api/admin/query', {
     method: 'POST',
@@ -109,6 +173,18 @@ function parseDesignerRow(row: DesignerRow | undefined): Designer | null {
     known_for_tags: JSON.parse((row.known_for_tags as string) || '[]'),
     eras: JSON.parse((row.eras as string) || '[]'),
     signature_pieces: JSON.parse((row.signature_pieces as string) || '[]'),
+  }
+}
+
+function parseTrendRow(row: TrendRow | undefined): Trend | null {
+  if (!row) return null
+  return {
+    ...row,
+    designer_slugs: JSON.parse((row.designer_slugs as string) || '[]'),
+    preview_images: JSON.parse((row.preview_images as string) || '[]'),
+    images: JSON.parse((row.images as string) || '[]'),
+    keywords: JSON.parse((row.keywords as string) || '[]'),
+    products: JSON.parse((row.products as string) || '[]'),
   }
 }
 
@@ -207,6 +283,98 @@ const adminApi = {
     },
   },
 
+  keywords: {
+    async list(): Promise<Keyword[]> {
+      const { results } = await query(`
+        SELECT
+          k.id, k.name, k.slug, k.description, k.created_at, k.updated_at,
+          (SELECT COUNT(*) FROM designers d WHERE d.known_for_tags LIKE '%"' || k.name || '"%') AS designer_count
+        FROM keywords k
+        ORDER BY k.name ASC
+      `)
+      return results as unknown as Keyword[]
+    },
+    async getBySlug(slug: string): Promise<Keyword | null> {
+      const { results } = await query(
+        'SELECT * FROM keywords WHERE slug = ?',
+        [slug],
+      )
+      return (results[0] as unknown as Keyword) || null
+    },
+    async updateDescription(id: number, description: string) {
+      const { meta } = await query(
+        "UPDATE keywords SET description = ?, updated_at = datetime('now') WHERE id = ?",
+        [description, id],
+      )
+      return meta
+    },
+    async relatedDesigners(keywordName: string): Promise<Designer[]> {
+      const { results } = await query(
+        `SELECT * FROM designers WHERE known_for_tags LIKE ? ORDER BY name ASC`,
+        [`%"${keywordName}"%`],
+      )
+      return results.map((r) => parseDesignerRow(r as unknown as DesignerRow)!)
+    },
+  },
+
+  trends: {
+    async list(): Promise<Trend[]> {
+      const { results } = await query(
+        'SELECT * FROM trends ORDER BY created_at DESC',
+      )
+      return results.map((r) => parseTrendRow(r as unknown as TrendRow)!)
+    },
+    async getById(id: string | number): Promise<Trend | null> {
+      const { results } = await query(
+        'SELECT * FROM trends WHERE id = ?',
+        [id],
+      )
+      return parseTrendRow(results[0] as unknown as TrendRow)
+    },
+    async create(data: TrendInput) {
+      const slug = data.slug || slugify(data.name)
+      const images = data.images || []
+      const preview_images = images.slice(0, 3)
+      const { meta } = await query(
+        `INSERT INTO trends (name, slug, context, designer_slugs, preview_images, images, keywords, products)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          data.name, slug, data.context || '',
+          JSON.stringify(data.designer_slugs || []),
+          JSON.stringify(preview_images),
+          JSON.stringify(images),
+          JSON.stringify(data.keywords || []),
+          JSON.stringify(data.products || []),
+        ],
+      )
+      return meta
+    },
+    async update(id: string | number, data: TrendInput) {
+      const images = data.images || []
+      const preview_images = images.slice(0, 3)
+      const { meta } = await query(
+        `UPDATE trends SET
+          name = ?, context = ?, designer_slugs = ?, preview_images = ?,
+          images = ?, keywords = ?, products = ?, updated_at = datetime('now')
+         WHERE id = ?`,
+        [
+          data.name, data.context || '',
+          JSON.stringify(data.designer_slugs || []),
+          JSON.stringify(preview_images),
+          JSON.stringify(images),
+          JSON.stringify(data.keywords || []),
+          JSON.stringify(data.products || []),
+          id,
+        ],
+      )
+      return meta
+    },
+    async delete(id: number) {
+      const { meta } = await query('DELETE FROM trends WHERE id = ?', [id])
+      return meta
+    },
+  },
+
   requests: {
     async list(status?: string): Promise<DesignerRequest[]> {
       if (status) {
@@ -268,4 +436,7 @@ const adminApi = {
 
 export default adminApi
 export { slugify }
-export type { Designer, DesignerInput, DesignerRequest, DesignerRow, Era, Piece, StatCounts, Tag, User }
+export type {
+  Designer, DesignerInput, DesignerRequest, DesignerRow, Era, Keyword,
+  Piece, StatCounts, Tag, Trend, TrendInput, TrendProduct, User,
+}

@@ -7,6 +7,9 @@ import Designers from '@/pages/Designers'
 import DesignerForm from '@/pages/DesignerForm'
 import DesignerRequests from '@/pages/DesignerRequests'
 import Users from '@/pages/Users'
+import Keywords from '@/pages/Keywords'
+import Trends from '@/pages/Trends'
+import TrendForm from '@/pages/TrendForm'
 
 const theme = createTheme({
   palette: {
@@ -30,6 +33,10 @@ export default function App() {
               <Route path="designers" element={<Designers />} />
               <Route path="designers/new" element={<DesignerForm />} />
               <Route path="designers/:id/edit" element={<DesignerForm />} />
+              <Route path="keywords" element={<Keywords />} />
+              <Route path="trends" element={<Trends />} />
+              <Route path="trends/new" element={<TrendForm />} />
+              <Route path="trends/:id/edit" element={<TrendForm />} />
               <Route path="requests" element={<DesignerRequests />} />
               <Route path="users" element={<Users />} />
               <Route path="*" element={<Navigate to="/" replace />} />

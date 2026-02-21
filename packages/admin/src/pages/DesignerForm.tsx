@@ -3,13 +3,13 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Box, Typography, TextField, Button, Paper, IconButton,
-  CircularProgress, Divider,
+  CircularProgress, Divider, Autocomplete, Chip,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import DeleteIcon from '@mui/icons-material/Delete'
 import SaveIcon from '@mui/icons-material/Save'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
-import adminApi, { slugify } from '@/api/adminApi'
+import adminApi, { slugify, KEYWORDS_LIST } from '@/api/adminApi'
 import UrlOrUploadField from '@/components/UrlOrUploadField'
 
 interface TagItem {
@@ -56,7 +56,6 @@ const emptyDesigner: DesignerFormState = {
   creative_director: '', known_for_tags: [], eras: [], signature_pieces: [],
 }
 
-const emptyTag: TagItem = { name: '', description: '' }
 const emptyEra: EraItem = { title: '', year_range: '', description: '', images: [] }
 const emptyPiece: PieceItem = { name: '', image_url: '', link: '' }
 
@@ -125,6 +124,7 @@ export default function DesignerForm() {
 
   const [form, setForm] = useState<DesignerFormState>({ ...emptyDesigner })
   const [saving, setSaving] = useState(false)
+  const [keywordInput, setKeywordInput] = useState('')
 
   const { data: existing, isLoading } = useQuery({
     queryKey: ['admin-designer', id],
@@ -325,22 +325,40 @@ export default function DesignerForm() {
         />
       </Paper>
 
-      {/* Known For Tags */}
+      {/* Known For Keywords */}
       <Paper sx={{ p: 3, mb: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="subtitle2">Known For Tags</Typography>
-          <Button
-            size="small"
-            startIcon={<AddIcon />}
-            onClick={() => setForm((prev) => ({ ...prev, known_for_tags: [...prev.known_for_tags, { ...emptyTag }] }))}
-          >
-            Add Tag
-          </Button>
-        </Box>
+        <Typography variant="subtitle2" gutterBottom>Known For Keywords</Typography>
+        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
+          Select from the closed list of {KEYWORDS_LIST.length} keywords. Add a custom description per keyword (optional).
+        </Typography>
+        <Autocomplete
+          options={KEYWORDS_LIST.filter(
+            (kw) => !form.known_for_tags.some((t) => t.name === kw)
+          )}
+          inputValue={keywordInput}
+          onInputChange={(_, v) => setKeywordInput(v)}
+          value={null}
+          onChange={(_, newValue) => {
+            if (!newValue) return
+            setForm((prev) => ({
+              ...prev,
+              known_for_tags: [...prev.known_for_tags, { name: newValue, description: '' }],
+            }))
+            setKeywordInput('')
+          }}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              size="small"
+              placeholder="Search and add keyword..."
+              sx={{ mb: 2 }}
+            />
+          )}
+        />
         {form.known_for_tags.map((tag, i) => (
           <Box key={i} sx={{ mb: 2, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-              <Typography variant="caption">Tag {i + 1}</Typography>
+              <Chip label={tag.name} size="small" color="primary" variant="outlined" />
               <IconButton
                 size="small"
                 color="error"
@@ -350,15 +368,7 @@ export default function DesignerForm() {
               </IconButton>
             </Box>
             <TextField
-              label="Tag name"
-              fullWidth
-              size="small"
-              value={tag.name || ''}
-              onChange={(e) => updateTag(i, 'name', e.target.value)}
-              sx={{ mb: 1 }}
-            />
-            <TextField
-              label="Tag description"
+              label="Custom description (optional)"
               fullWidth
               size="small"
               multiline
