@@ -8,25 +8,21 @@ const VIDEOS = [
     id: "2d21ff_c795d21c3468406e98dd658cca4ab12e",
     name: "Chloé Summer 26 Campaign",
     url: "https://video.wixstatic.com/video/2d21ff_c795d21c3468406e98dd658cca4ab12e/1080p/mp4/file.mp4",
-    poster: "https://video.wixstatic.com/video/2d21ff_c795d21c3468406e98dd658cca4ab12ef001.jpg"
   },
   {
     id: "2d21ff_f07fa4e1f1b5403281cca7db1abe2653",
     name: "Givenchy Winter 2025",
     url: "https://video.wixstatic.com/video/2d21ff_f07fa4e1f1b5403281cca7db1abe2653/1080p/mp4/file.mp4",
-    poster: "https://video.wixstatic.com/video/2d21ff_f07fa4e1f1b5403281cca7db1abe2653f001.jpg"
   },
   {
     id: "2d21ff_3401ffafd1f04f9eb5031a28c9644907",
     name: "Bottega Veneta Winter 24",
     url: "https://video.wixstatic.com/video/2d21ff_3401ffafd1f04f9eb5031a28c9644907/1080p/mp4/file.mp4",
-    poster: "https://video.wixstatic.com/video/2d21ff_3401ffafd1f04f9eb5031a28c9644907f001.jpg"
   },
   {
     id: "2d21ff_0cfcdbc023b543abba08e3e2c5a84b95",
     name: "Loewe Fall Winter 2025",
     url: "https://video.wixstatic.com/video/2d21ff_0cfcdbc023b543abba08e3e2c5a84b95/1080p/mp4/file.mp4",
-    poster: "https://video.wixstatic.com/video/2d21ff_0cfcdbc023b543abba08e3e2c5a84b95f001.jpg"
   }
 ];
 
@@ -62,7 +58,6 @@ export default function Landing() {
               muted
               loop
               playsInline
-              poster={video.poster}
               className="w-full h-full object-cover"
               onLoadedData={(e) => (e.target as HTMLVideoElement).play()}
             >
