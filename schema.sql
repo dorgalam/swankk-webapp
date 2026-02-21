@@ -56,3 +56,15 @@ CREATE TABLE IF NOT EXISTS designer_requests (
   status TEXT NOT NULL DEFAULT 'pending',
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS trends (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  context TEXT DEFAULT '',
+  designer_slugs TEXT DEFAULT '[]',
+  preview_images TEXT DEFAULT '[]',
+  images TEXT DEFAULT '[]',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);

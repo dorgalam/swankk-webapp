@@ -1,22 +1,20 @@
-import React from "react";
-import { useAuth } from "@/lib/AuthContext";
+import React, { useEffect } from "react";
 import { LogOut, User } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function Profile() {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, isLoadingAuth, logout } = useAuth();
   const navigate = useNavigate();
 
-  if (!isAuthenticated || !user) {
-    navigate("/Login", { replace: true });
-    return null;
-  }
+  useEffect(() => {
+    if (!isLoadingAuth && !isAuthenticated) {
+      navigate("/Login");
+    }
+  }, [isAuthenticated, isLoadingAuth, navigate]);
 
-  const handleLogout = async () => {
-    await logout();
-    navigate("/", { replace: true });
-  };
+  if (!user) return null;
 
   return (
     <div className="min-h-[60vh] px-5 md:px-8 pt-8 pb-20">
@@ -39,7 +37,10 @@ export default function Profile() {
             My Collections
           </Link>
           <button
-            onClick={handleLogout}
+            onClick={async () => {
+              await logout();
+              navigate("/Login");
+            }}
             className="flex items-center gap-2 w-full text-left px-4 py-3.5 border border-gray-100 rounded-xl text-sm text-red-500 hover:border-red-100 hover:bg-red-50/50 transition-colors"
           >
             <LogOut className="w-4 h-4" strokeWidth={1.5} />

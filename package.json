@@ -7,6 +7,7 @@
     "dev:web": "npm run dev -w @swankk/web",
     "dev:admin": "npm run dev -w @swankk/admin",
     "dev:web:full": "npm run dev:full -w @swankk/web",
+    "dev:web:remote": "npm run dev:remote -w @swankk/web",
     "dev:admin:full": "npm run dev:full -w @swankk/admin",
     "build": "npm run build:web && npm run build:admin",
     "build:web": "npm run build -w @swankk/web",

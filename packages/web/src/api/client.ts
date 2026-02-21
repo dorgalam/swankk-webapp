@@ -1,4 +1,4 @@
-const BASE = '/api';
+const BASE = (import.meta.env.VITE_API_BASE ?? '') + '/api';
 
 export class ApiError extends Error {
   status: number;
@@ -27,6 +27,16 @@ async function request<T = any>(path: string, options: RequestInit = {}): Promis
 }
 
 export const api = {
+  trends: {
+    list: () => request('/trends'),
+    filter: (params: Record<string, string>) => {
+      const qs = new URLSearchParams(params).toString();
+      return request(`/trends/filter?${qs}`);
+    },
+    create: (data: Record<string, unknown>) => request('/trends', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: number | string, data: Record<string, unknown>) => request(`/trends/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id: number | string) => request(`/trends/${id}`, { method: 'DELETE' }),
+  },
   designers: {
     list: () => request('/designers'),
     filter: (params: Record<string, string>) => {

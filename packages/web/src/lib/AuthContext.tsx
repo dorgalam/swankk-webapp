@@ -22,24 +22,26 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(false); // Auth disabled
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
+  // Auth temporarily disabled
+  // useEffect(() => {
+  //   checkAuth();
+  // }, []);
 
   const checkAuth = async () => {
-    try {
-      setIsLoadingAuth(true);
-      const currentUser = await api.auth.me();
-      setUser(currentUser);
-      setIsAuthenticated(true);
-    } catch {
-      setUser(null);
-      setIsAuthenticated(false);
-    } finally {
-      setIsLoadingAuth(false);
-    }
+    // Auth temporarily disabled
+    // try {
+    //   setIsLoadingAuth(true);
+    //   const currentUser = await api.auth.me();
+    //   setUser(currentUser);
+    //   setIsAuthenticated(true);
+    // } catch {
+    //   setUser(null);
+    //   setIsAuthenticated(false);
+    // } finally {
+    //   setIsLoadingAuth(false);
+    // }
   };
 
   const login = async (email: string, password: string): Promise<AuthUser> => {

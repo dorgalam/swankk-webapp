@@ -2,6 +2,8 @@ import React from "react";
 import TopBar from "@/components/swankk/TopBar";
 
 export default function Layout({ children, currentPageName }: { children: React.ReactNode; currentPageName?: string }) {
+  const isLandingPage = currentPageName === "Landing";
+
   return (
     <div className="min-h-screen bg-white">
       <style>{`
@@ -31,7 +33,7 @@ export default function Layout({ children, currentPageName }: { children: React.
           scrollbar-width: none;
         }
       `}</style>
-      <TopBar />
+      {!isLandingPage && <TopBar currentPageName={currentPageName} />}
       <main>{children}</main>
     </div>
   );

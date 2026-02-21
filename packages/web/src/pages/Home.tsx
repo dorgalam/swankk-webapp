@@ -1,179 +1,260 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { api } from "@/api/client";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, ArrowRight } from "lucide-react";
-import PronunciationCard from "@/components/swankk/PronunciationCard";
-import RequestDesignerForm from "@/components/swankk/RequestDesignerForm";
-
-interface Designer {
-  id: number;
-  name: string;
-  slug: string;
-  phonetic: string;
-  audio_url?: string;
-  hero_image_url?: string;
-  [key: string]: any;
-}
+import { Link, useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+import TasteOnboarding from "@/components/swankk/TasteOnboarding";
+import TasteEditModal from "@/components/swankk/TasteEditModal";
 
 export default function Home() {
-  const [query, setQuery] = useState("");
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [selectedDesigner, setSelectedDesigner] = useState<Designer | null>(null);
-  const [showRequest, setShowRequest] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  
+  const navigate = useNavigate();
 
-  const { data: designers = [], isLoading } = useQuery<Designer[]>({
+  const hasSeenLanding = localStorage.getItem("swankk_seen_landing");
+
+  useEffect(() => {
+    if (!hasSeenLanding) {
+      navigate(createPageUrl("Landing"), { replace: true });
+    }
+  }, [hasSeenLanding, navigate]);
+
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [userTaste, setUserTaste] = useState<string[] | null>(null);
+
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
+    const savedTaste = localStorage.getItem("swankk_taste");
+    const hasSeenOnboarding = localStorage.getItem("swankk_onboarding_seen");
+
+    if (hasSeenLanding && !hasSeenOnboarding && !savedTaste) {
+      setShowOnboarding(true);
+    }
+
+    if (savedTaste) {
+      setUserTaste(JSON.parse(savedTaste));
+    }
+  }, [hasSeenLanding]);
+
+  const handleOnboardingComplete = (selectedHouses: string[]) => {
+    setUserTaste(selectedHouses);
+    localStorage.setItem("swankk_taste", JSON.stringify(selectedHouses));
+    localStorage.setItem("swankk_onboarding_seen", "true");
+    setShowOnboarding(false);
+  };
+
+  const handleOnboardingSkip = () => {
+    localStorage.setItem("swankk_onboarding_seen", "true");
+    setShowOnboarding(false);
+  };
+
+  const handleEditTaste = (selectedHouses: string[]) => {
+    setUserTaste(selectedHouses);
+    localStorage.setItem("swankk_taste", JSON.stringify(selectedHouses));
+    setShowEditModal(false);
+  };
+
+  const { data: allDesigners = [], isLoading: designersLoading } = useQuery({
     queryKey: ["designers"],
     queryFn: () => api.designers.list(),
   });
 
-  const filtered = designers.filter((d) =>
-    d.name.toLowerCase().includes(query.toLowerCase())
-  );
+  const { data: trends = [], isLoading: trendsLoading } = useQuery({
+    queryKey: ["trends"],
+    queryFn: () => api.trends.list(),
+  });
 
-  const hasResults = query.length > 0 && filtered.length > 0;
-  const noResults = query.length > 1 && filtered.length === 0;
+  // All eras across all designers (API already parses JSON fields)
+  const allEras = (allDesigners as any[]).flatMap((designer: any) => {
+    const eras: any[] = designer.eras || [];
+    return eras.map((era: any, index: number) => ({
+      ...era,
+      designer,
+      eraIndex: index,
+    }));
+  });
 
-  const handleSelect = (designer: Designer) => {
-    setSelectedDesigner(designer);
-    setQuery(designer.name);
-    setShowDropdown(false);
-    setShowRequest(false);
+  const getFilteredContent = () => {
+    const trendsList = trends as any[];
+
+    if (!userTaste || userTaste.length === 0) {
+      return {
+        trends: trendsList.slice(0, 3),
+        eras: allEras.slice(0, 6),
+      };
+    }
+
+    // Match taste selection to designer names
+    const selectedDesignerSlugs = (allDesigners as any[])
+      .filter((d: any) => userTaste.some((house) => d.name?.toLowerCase().includes(house.toLowerCase())))
+      .map((d: any) => d.slug);
+
+    const relevantEras = selectedDesignerSlugs.length > 0
+      ? allEras.filter((era: any) => selectedDesignerSlugs.includes(era.designer?.slug))
+      : allEras;
+
+    return {
+      trends: trendsList.slice(0, 3),
+      eras: relevantEras.slice(0, 6),
+    };
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setQuery(e.target.value);
-    setShowDropdown(true);
-    setSelectedDesigner(null);
-    setShowRequest(false);
-  };
+  const isLoading = trendsLoading || designersLoading;
+
+  const { trends: filteredTrends, eras: filteredEras } = getFilteredContent();
+
+if (!hasSeenLanding) {
+    return null;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="w-6 h-6 border-2 border-gray-200 border-t-black rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-[calc(100vh-56px)] flex flex-col">
-      {/* Hero */}
-      <div className="flex-1 flex items-center justify-center px-5 py-8">
-        <div className="w-full max-w-md mx-auto">
-          <div className="text-center mb-6">
-            <motion.p
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-[10px] tracking-[0.3em] uppercase text-gray-400 font-light mb-3"
-            >
-              The Little Book Of
-            </motion.p>
-            <motion.h1
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.2 }}
-              className="font-serif text-[2.5rem] md:text-5xl font-medium text-black leading-[1.15] mb-3"
-            >
-              How do you
-              <br />
-              <em className="font-light italic">pronounce…</em>
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="text-[13px] text-gray-400 mb-6 font-light leading-relaxed"
-            >
-              Your pocket guide to fashion's most iconic houses
-            </motion.p>
-          </div>
+    <>
+      <AnimatePresence>
+        {showOnboarding && (
+          <TasteOnboarding
+            onComplete={handleOnboardingComplete}
+            onSkip={handleOnboardingSkip}
+          />
+        )}
+        {showEditModal && (
+          <TasteEditModal
+            currentHouses={userTaste || []}
+            onSave={handleEditTaste}
+            onClose={() => setShowEditModal(false)}
+          />
+        )}
+      </AnimatePresence>
 
-          {/* Search input */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-            className="relative mb-6"
+      <div className="px-5 md:px-8 py-8 pb-20">
+        {userTaste && userTaste.length > 0 && (
+          <button
+            onClick={() => setShowEditModal(true)}
+            className="mb-6 text-xs text-gray-500 hover:text-black transition-colors"
           >
-            <div className="relative">
-              <Search
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300"
-                strokeWidth={1.5}
-              />
-              <input
-                ref={inputRef}
-                type="text"
-                placeholder="Search a designer…"
-                value={query}
-                onChange={handleInputChange}
-                onFocus={() => setShowDropdown(true)}
-                className="w-full pl-11 pr-4 py-3.5 text-[15px] border border-gray-200 rounded-2xl focus:outline-none focus:border-gray-300 transition-colors bg-white placeholder:text-gray-300"
-              />
-            </div>
+            Tuned to: {userTaste.join(" • ")}
+          </button>
+        )}
 
-            {/* Autocomplete dropdown */}
-            <AnimatePresence>
-              {showDropdown && query.length > 0 && !selectedDesigner && (
-                <motion.div
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden z-20"
-                >
-                  {hasResults ? (
-                    filtered.map((d) => (
-                      <button
-                        key={d.id}
-                        onClick={() => handleSelect(d)}
-                        className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors text-left"
-                      >
-                        <div>
-                          <span className="text-[15px] font-medium text-black">
-                            {d.name}
-                          </span>
-                          <span className="ml-2 text-xs text-gray-400 italic font-light">
-                            /{d.phonetic}/
-                          </span>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-12"
+        >
+          <h1 className="font-serif text-4xl md:text-5xl font-medium text-black mb-2">
+            The Fashion Index
+          </h1>
+          <p className="text-sm text-gray-400">
+            Trends to save. Eras to understand.
+          </p>
+        </motion.div>
+
+        {filteredTrends.length > 0 && (
+          <div className="mb-16">
+            <p className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium mb-8">
+              Current Trends
+            </p>
+
+            <div className="space-y-10">
+              {filteredTrends.map((trend: any) => {
+                const previewImages = trend.preview_images || [];
+
+                return (
+                  <div key={trend.id}>
+                    <h2 className="font-serif text-2xl md:text-3xl font-medium text-black mb-4">
+                      {trend.name}
+                    </h2>
+
+                    <div className="relative -mx-5 md:-mx-8">
+                      <div className="overflow-x-auto scrollbar-hide px-5 md:px-8">
+                        <div className="flex gap-3 pb-2">
+                          {previewImages.map((img: string, i: number) => (
+                            <Link
+                              key={i}
+                              to={createPageUrl(`TrendDetail?slug=${trend.slug}`)}
+                              className="flex-shrink-0 w-[280px] group"
+                            >
+                              <div className="aspect-[3/4] rounded-xl overflow-hidden">
+                                <img
+                                  src={img}
+                                  alt={`${trend.name} ${i + 1}`}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                />
+                              </div>
+                            </Link>
+                          ))}
                         </div>
-                        <ArrowRight
-                          className="w-3.5 h-3.5 text-gray-300"
-                          strokeWidth={1.5}
-                        />
-                      </button>
-                    ))
-                  ) : noResults ? (
-                    <button
-                      onClick={() => {
-                        setShowDropdown(false);
-                        setShowRequest(true);
-                      }}
-                      className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors"
-                    >
-                      <p className="text-sm text-gray-500">
-                        Can't find "{query}"?
-                      </p>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        Tap to request this designer →
-                      </p>
-                    </button>
-                  ) : null}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
-          {/* Result */}
-          <AnimatePresence mode="wait">
-            {selectedDesigner && (
-              <PronunciationCard
-                key={selectedDesigner.id}
-                designer={selectedDesigner}
-              />
-            )}
-            {showRequest && (
-              <RequestDesignerForm key="request" designerName={query} />
-            )}
-          </AnimatePresence>
-        </div>
+        {filteredEras.length > 0 && (
+          <div>
+            <p className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium mb-8">
+              Defining Eras
+            </p>
+
+            <div className="space-y-10">
+              {filteredEras.filter((era: any) => (era.images?.length ?? 0) > 0)
+              .map((era: any) => {
+                const eraImages: string[] = era.images || [];
+
+                return (
+                  <div key={`${era.designer.id}-${era.eraIndex}`}>
+                    <div className="mb-4">
+                      <h2 className="font-serif text-2xl md:text-3xl font-medium text-black">
+                        {era.title}
+                      </h2>
+                      <p className="text-sm text-gray-400 mt-1">
+                        {era.year_range} · {era.designer.name}
+                      </p>
+                    </div>
+
+                    <div className="relative -mx-5 md:-mx-8">
+                      <div className="overflow-x-auto scrollbar-hide px-5 md:px-8">
+                        <div className="flex gap-3 pb-2">
+                          {eraImages.slice(0, 8).map((img: string, i: number) => (
+                            <Link
+                              key={i}
+                              to={createPageUrl(`EraGallery?slug=${era.designer.slug}&era=${era.eraIndex}`)}
+                              className="flex-shrink-0 w-[280px] group"
+                            >
+                              <div className="aspect-[3/4] rounded-xl overflow-hidden">
+                                <img
+                                  src={img}
+                                  alt={`${era.title} ${i + 1}`}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                />
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
-
-
-    </div>
+    </>
   );
 }

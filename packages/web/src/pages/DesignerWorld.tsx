@@ -3,43 +3,29 @@ import { api } from "@/api/client";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Volume2, ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-
 import QuickFacts from "@/components/swankk/QuickFacts";
 import ErasCarousel from "@/components/swankk/ErasCarousel";
 import SignaturePieces from "@/components/swankk/SignaturePieces";
 import SaveButton from "@/components/swankk/SaveButton";
 
-interface Designer {
-  id: number;
-  name: string;
-  slug: string;
-  phonetic: string;
-  audio_url?: string;
-  hero_image_url?: string;
-  origin_meaning?: string;
-  founder?: string;
-  founded_year?: string;
-  origin_location?: string;
-  creative_director?: string;
-  known_for_tags?: string[];
-  eras?: any[];
-  signature_pieces?: any[];
-  [key: string]: any;
-}
-
 export default function DesignerWorld() {
   const urlParams = new URLSearchParams(window.location.search);
-  const slug = urlParams.get("slug");
+  const slug = urlParams.get("slug") || "";
+  const navigate = useNavigate();
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const { data: designers = [], isLoading } = useQuery<Designer[]>({
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [slug]);
+
+  const { data: designers = [], isLoading } = useQuery({
     queryKey: ["designer", slug],
-    queryFn: () => api.designers.filter({ slug: slug! }),
+    queryFn: () => api.designers.filter({ slug }),
   });
 
-  const designer = designers[0];
+  const designer = (designers as any[])[0];
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
 
   React.useEffect(() => {
@@ -84,54 +70,47 @@ export default function DesignerWorld() {
 
   return (
     <div className="pb-20">
-      {/* Hero */}
-      <div className="relative h-64 md:h-80 overflow-hidden">
+      <div className="relative h-40 md:h-56 overflow-hidden">
         <img
           src={designer.hero_image_url}
           alt={designer.name}
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
         <div className="absolute top-4 left-4">
-          <Link
-            to={createPageUrl("Home")}
+          <button
+            onClick={() => {
+              navigate(-1);
+              setTimeout(() => window.scrollTo(0, 0), 0);
+            }}
             className="p-2.5 rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-colors"
           >
             <ArrowLeft className="w-4 h-4 text-white" strokeWidth={1.5} />
-          </Link>
+          </button>
         </div>
+      </div>
 
-        <div className="absolute top-4 right-4">
+      <div className="px-5 md:px-8 pt-6">
+        <div className="flex items-start justify-between mb-4">
+          <motion.h1
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="font-serif text-4xl md:text-5xl text-black font-medium"
+          >
+            {designer.name}
+          </motion.h1>
           <SaveButton
             itemType="designer"
             designerId={designer.id}
             title={designer.name}
-            imageUrl={designer.hero_image_url || ''}
+            imageUrl={designer.hero_image_url}
             subtitle={designer.phonetic}
-            iconColor="white"
+            iconColor="black"
           />
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0 p-5 md:p-8">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <h1 className="font-serif text-4xl md:text-5xl text-white font-medium">
-              {designer.name}
-            </h1>
-          </motion.div>
-        </div>
-      </div>
-
-      {/* Pronunciation */}
-      <div className="px-5 md:px-8 pt-6">
-        <div className="flex items-center gap-4 mb-2">
-          <p className="text-gray-400 text-sm italic font-light">
-            /{designer.phonetic}/
-          </p>
+        <div className="flex items-center gap-4 mb-8">
           <button
             onClick={handlePlay}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs tracking-wider font-medium transition-all ${
@@ -146,23 +125,20 @@ export default function DesignerWorld() {
             />
             {isPlaying ? "Playing…" : "Listen"}
           </button>
-        </div>
-        {designer.origin_meaning && (
-          <p className="text-xs text-gray-400 leading-relaxed max-w-md mb-8">
-            {designer.origin_meaning}
+          <p className="text-gray-400 text-sm italic font-light">
+            /{designer.phonetic}/
           </p>
-        )}
+        </div>
 
         <div className="h-px bg-gray-100 mb-8" />
       </div>
 
-      {/* Content sections */}
       <div className="px-5 md:px-8 space-y-10">
         <QuickFacts designer={designer} />
         <div className="h-px bg-gray-100" />
-        <ErasCarousel designer={designer} />
-        <div className="h-px bg-gray-100" />
         <SignaturePieces designer={designer} />
+        <div className="h-px bg-gray-100" />
+        <ErasCarousel designer={designer} />
       </div>
     </div>
   );

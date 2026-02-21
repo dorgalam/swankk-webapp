@@ -1,73 +1,34 @@
-/**
- * pages.config.js - Page routing configuration
- * 
- * This file is AUTO-GENERATED. Do not add imports or modify PAGES manually.
- * Pages are auto-registered when you create files in the ./pages/ folder.
- * 
- * THE ONLY EDITABLE VALUE: mainPage
- * This controls which page is the landing page (shown when users visit the app).
- * 
- * Example file structure:
- * 
- *   import HomePage from './pages/HomePage';
- *   import Dashboard from './pages/Dashboard';
- *   import Settings from './pages/Settings';
- *   
- *   export const PAGES = {
- *       "HomePage": HomePage,
- *       "Dashboard": Dashboard,
- *       "Settings": Settings,
- *   }
- *   
- *   export const pagesConfig = {
- *       mainPage: "HomePage",
- *       Pages: PAGES,
- *   };
- * 
- * Example with Layout (wraps all pages):
- *
- *   import Home from './pages/Home';
- *   import Settings from './pages/Settings';
- *   import __Layout from './Layout';
- *
- *   export const PAGES = {
- *       "Home": Home,
- *       "Settings": Settings,
- *   }
- *
- *   export const pagesConfig = {
- *       mainPage: "Home",
- *       Pages: PAGES,
- *       Layout: __Layout,
- *   };
- *
- * To change the main page from HomePage to Dashboard, use find_replace:
- *   Old: mainPage: "HomePage",
- *   New: mainPage: "Dashboard",
- *
- * The mainPage value must match a key in the PAGES object exactly.
- */
 import React from 'react';
-import Admin from './pages/Admin';
 import ContentEditor from './pages/ContentEditor';
 import DesignerWorld from './pages/DesignerWorld';
+import EraGallery from './pages/EraGallery';
 import Home from './pages/Home';
+import ImageDetail from './pages/ImageDetail';
+import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Profile from './pages/Profile';
 import Saved from './pages/Saved';
 import SharedCollection from './pages/SharedCollection';
+import TagDiscovery from './pages/TagDiscovery';
+import TrendDetail from './pages/TrendDetail';
+import TrendImageDetail from './pages/TrendImageDetail';
 import __Layout from './Layout';
 
 
 export const PAGES: Record<string, React.ComponentType> = {
-    "Admin": Admin,
     "ContentEditor": ContentEditor,
     "DesignerWorld": DesignerWorld,
+    "EraGallery": EraGallery,
     "Home": Home,
+    "ImageDetail": ImageDetail,
+    "Landing": Landing,
     "Login": Login,
     "Profile": Profile,
     "Saved": Saved,
     "SharedCollection": SharedCollection,
+    "TagDiscovery": TagDiscovery,
+    "TrendDetail": TrendDetail,
+    "TrendImageDetail": TrendImageDetail,
 }
 
 export const pagesConfig = {

@@ -1,19 +1,9 @@
 import React from "react";
 import { motion } from "framer-motion";
 
-interface Designer {
-  founder?: string;
-  founded_year?: string | number;
-  origin_location?: string;
-  creative_director?: string;
-  known_for_tags?: string[];
-}
+export default function QuickFacts({ designer }: { designer: any }) {
+  if (!designer) return null;
 
-interface QuickFactsProps {
-  designer: Designer;
-}
-
-export default function QuickFacts({ designer }: QuickFactsProps) {
   const facts = [
     { label: "Founder", value: designer.founder },
     { label: "Founded", value: designer.founded_year },
@@ -28,7 +18,7 @@ export default function QuickFacts({ designer }: QuickFactsProps) {
       transition={{ duration: 0.5, delay: 0.1 }}
     >
       <h3 className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium mb-4">
-        Quick Facts
+        House profile
       </h3>
       <div className="space-y-0 border-t border-gray-100">
         {facts.map((fact, i) => (
@@ -36,26 +26,22 @@ export default function QuickFacts({ designer }: QuickFactsProps) {
             key={i}
             className="flex justify-between items-center py-3.5 border-b border-gray-100"
           >
-            <span className="text-xs text-gray-400 tracking-wide">
-              {fact.label}
-            </span>
-            <span className="text-sm text-black font-medium">
-              {fact.value}
-            </span>
+            <span className="text-xs text-gray-400 tracking-wide">{fact.label}</span>
+            <span className="text-black text-sm font-medium text-right">{fact.value}</span>
           </div>
         ))}
       </div>
 
-      {(designer.known_for_tags?.length ?? 0) > 0 && (
+      {Array.isArray(designer.known_for_tags) && designer.known_for_tags.length > 0 && (
         <div className="mt-4">
-          <span className="text-xs text-gray-400 tracking-wide">Known for</span>
-          <div className="flex flex-wrap gap-2 mt-2">
-            {designer.known_for_tags!.map((tag, i) => (
+          <span className="text-[10px] text-gray-400 tracking-wide">Known for</span>
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {designer.known_for_tags.map((tag: any, i: number) => (
               <span
                 key={i}
-                className="px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-full text-xs text-gray-700 tracking-wide"
+                className="px-2 py-1 bg-gray-50 border border-gray-100 rounded-full text-[10px] text-gray-700 tracking-wide"
               >
-                {tag}
+                {tag.name || tag}
               </span>
             ))}
           </div>

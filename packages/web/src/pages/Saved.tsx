@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { api } from "@/api/client";
-import { useAuth } from "@/lib/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ArrowLeft,
   Trash2,
@@ -10,34 +9,16 @@ import {
   Share2,
   X,
   Check,
-  Copy,
   Loader2,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-
-interface Collection {
-  id: number;
-  name: string;
-  owner_email: string;
-  is_public?: number;
-  share_id?: string;
-  [key: string]: any;
-}
-
-interface SavedItem {
-  id: number;
-  collection_id: number;
-  title: string;
-  subtitle?: string;
-  image_url?: string;
-  [key: string]: any;
-}
+import { useAuth } from "@/lib/AuthContext";
 
 export default function Saved() {
-  const { user, isAuthenticated, isLoadingAuth } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null);
+  const [selectedCollection, setSelectedCollection] = useState<any>(null);
   const [editingName, setEditingName] = useState<number | null>(null);
   const [newName, setNewName] = useState("");
   const [copied, setCopied] = useState(false);
@@ -46,7 +27,7 @@ export default function Saved() {
   const {
     data: collections = [],
     isLoading: colLoading,
-  } = useQuery<Collection[]>({
+  } = useQuery({
     queryKey: ["collections", user?.email],
     queryFn: () => api.collections.filter({ owner_email: user!.email }),
     enabled: !!user,
@@ -55,22 +36,23 @@ export default function Saved() {
   const {
     data: savedItems = [],
     isLoading: itemsLoading,
-  } = useQuery<SavedItem[]>({
+  } = useQuery({
     queryKey: ["savedItems", selectedCollection?.id],
-    queryFn: () =>
-      api.savedItems.filter({
-        collection_id: String(selectedCollection!.id),
-      }),
+    queryFn: () => api.savedItems.filter({ collection_id: String(selectedCollection.id) }),
     enabled: !!selectedCollection,
   });
 
-  const handleDeleteCollection = async (col: Collection) => {
+  const handleDeleteCollection = async (col: any) => {
+    const items = await api.savedItems.filter({ collection_id: String(col.id) });
+    for (const item of (items as any[])) {
+      await api.savedItems.delete(item.id);
+    }
     await api.collections.delete(col.id);
     setSelectedCollection(null);
     queryClient.invalidateQueries({ queryKey: ["collections"] });
   };
 
-  const handleRename = async (col: Collection) => {
+  const handleRename = async (col: any) => {
     if (!newName.trim()) return;
     await api.collections.update(col.id, { name: newName.trim() });
     setEditingName(null);
@@ -78,17 +60,17 @@ export default function Saved() {
     queryClient.invalidateQueries({ queryKey: ["collections"] });
   };
 
-  const handleRemoveItem = async (item: SavedItem) => {
+  const handleRemoveItem = async (item: any) => {
     await api.savedItems.delete(item.id);
     queryClient.invalidateQueries({ queryKey: ["savedItems"] });
   };
 
-  const handleShare = async (col: Collection) => {
+  const handleShare = async (col: any) => {
     const shareId =
       col.share_id || Math.random().toString(36).substring(2, 10);
     if (!col.share_id) {
       await api.collections.update(col.id, {
-        is_public: 1,
+        is_public: true,
         share_id: shareId,
       });
     }
@@ -100,33 +82,23 @@ export default function Saved() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  if (isLoadingAuth) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-5 h-5 animate-spin text-gray-300" />
-      </div>
-    );
-  }
-
   if (!isAuthenticated) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-5 text-center">
         <p className="font-serif text-2xl text-black mb-2">Your Collections</p>
         <p className="text-sm text-gray-400 mb-6 max-w-xs">
-          Sign in to save designers, eras, and signature pieces to your personal
-          collections.
+          Sign in to save designers, eras, and signature pieces to your personal collections.
         </p>
-        <Link
-          to="/Login"
+        <button
+          onClick={() => navigate("/Login")}
           className="px-8 py-3 bg-black text-white text-sm tracking-wider font-medium rounded-full hover:bg-gray-900 transition-colors"
         >
           Sign in
-        </Link>
+        </button>
       </div>
     );
   }
 
-  // Collection detail view
   if (selectedCollection) {
     return (
       <div className="min-h-[60vh] pb-20">
@@ -161,15 +133,13 @@ export default function Saved() {
             <div className="flex items-center justify-center py-16">
               <Loader2 className="w-5 h-5 animate-spin text-gray-300" />
             </div>
-          ) : savedItems.length === 0 ? (
+          ) : (savedItems as any[]).length === 0 ? (
             <div className="text-center py-16">
-              <p className="text-sm text-gray-400">
-                No items saved yet.
-              </p>
+              <p className="text-sm text-gray-400">No items saved yet.</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {savedItems.map((item) => (
+              {(savedItems as any[]).map((item: any) => (
                 <motion.div
                   key={item.id}
                   layout
@@ -203,9 +173,7 @@ export default function Saved() {
                     {item.title}
                   </p>
                   {item.subtitle && (
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      {item.subtitle}
-                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5">{item.subtitle}</p>
                   )}
                 </motion.div>
               ))}
@@ -216,7 +184,6 @@ export default function Saved() {
     );
   }
 
-  // Collections list
   return (
     <div className="min-h-[60vh] pb-20">
       <div className="px-5 md:px-8 pt-8">
@@ -228,18 +195,16 @@ export default function Saved() {
           <div className="flex items-center justify-center py-16">
             <Loader2 className="w-5 h-5 animate-spin text-gray-300" />
           </div>
-        ) : collections.length === 0 ? (
+        ) : (collections as any[]).length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-sm text-gray-400 mb-2">
-              No collections yet.
-            </p>
+            <p className="text-sm text-gray-400 mb-2">No collections yet.</p>
             <p className="text-xs text-gray-300">
               Save items from designer pages to create your first collection.
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {collections.map((col) => (
+            {(collections as any[]).map((col: any) => (
               <motion.div
                 key={col.id}
                 whileHover={{ y: -2 }}
@@ -281,10 +246,7 @@ export default function Saved() {
                         }}
                         className="p-1.5 rounded-full hover:bg-gray-100 transition-colors"
                       >
-                        <Pencil
-                          className="w-3.5 h-3.5 text-gray-400"
-                          strokeWidth={1.5}
-                        />
+                        <Pencil className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.5} />
                       </button>
                       <button
                         onClick={(e) => {
@@ -293,10 +255,7 @@ export default function Saved() {
                         }}
                         className="p-1.5 rounded-full hover:bg-gray-100 transition-colors"
                       >
-                        <Share2
-                          className="w-3.5 h-3.5 text-gray-400"
-                          strokeWidth={1.5}
-                        />
+                        <Share2 className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.5} />
                       </button>
                       <button
                         onClick={(e) => {
@@ -306,10 +265,7 @@ export default function Saved() {
                         }}
                         className="p-1.5 rounded-full hover:bg-gray-100 transition-colors"
                       >
-                        <Trash2
-                          className="w-3.5 h-3.5 text-red-400"
-                          strokeWidth={1.5}
-                        />
+                        <Trash2 className="w-3.5 h-3.5 text-red-400" strokeWidth={1.5} />
                       </button>
                     </div>
                   </>

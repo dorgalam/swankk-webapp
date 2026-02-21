@@ -5,34 +5,19 @@ import { Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
-interface Collection {
-  id: number;
-  name: string;
-  share_id: string;
-  [key: string]: any;
-}
-
-interface SavedItem {
-  id: number;
-  title: string;
-  subtitle?: string;
-  image_url?: string;
-  [key: string]: any;
-}
-
 export default function SharedCollection() {
   const urlParams = new URLSearchParams(window.location.search);
-  const shareId = urlParams.get("id");
+  const shareId = urlParams.get("id") || "";
 
-  const { data: collections = [], isLoading: colLoading } = useQuery<Collection[]>({
+  const { data: collections = [], isLoading: colLoading } = useQuery({
     queryKey: ["sharedCollection", shareId],
-    queryFn: () => api.collections.filterPublic({ share_id: shareId! }),
+    queryFn: () => api.collections.filterPublic({ share_id: shareId }),
     enabled: !!shareId,
   });
 
-  const collection = collections[0];
+  const collection = (collections as any[])[0];
 
-  const { data: items = [], isLoading: itemsLoading } = useQuery<SavedItem[]>({
+  const { data: items = [], isLoading: itemsLoading } = useQuery({
     queryKey: ["sharedItems", collection?.id],
     queryFn: () => api.savedItems.filter({ collection_id: String(collection.id) }),
     enabled: !!collection,
@@ -75,13 +60,13 @@ export default function SharedCollection() {
           {collection.name}
         </h1>
 
-        {items.length === 0 ? (
+        {(items as any[]).length === 0 ? (
           <p className="text-sm text-gray-400 text-center py-12">
             This collection is empty.
           </p>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {items.map((item) => (
+            {(items as any[]).map((item: any) => (
               <div key={item.id}>
                 <div className="aspect-square rounded-xl overflow-hidden bg-gray-50">
                   {item.image_url ? (

@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:full": "npx wrangler pages dev --d1=DB -- npm run dev",
+    "dev:vite": "vite --port 5173",
+    "dev:full": "concurrently \"npm run dev:vite\" \"npx wrangler pages dev --proxy=5173 --d1=DB --r2=ASSETS_BUCKET\"",
+    "dev:remote": "VITE_API_BASE=https://swankk.pages.dev vite",
     "build": "vite build",
     "deploy": "npx wrangler pages deploy dist",
     "lint": "eslint . --quiet",
@@ -33,6 +35,7 @@
     "@types/react-dom": "^18.2.22",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "concurrently": "^9.2.1",
     "eslint": "^9.19.0",
     "eslint-plugin-react": "^7.37.4",
     "eslint-plugin-react-hooks": "^5.0.0",

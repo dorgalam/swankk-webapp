@@ -2,60 +2,20 @@ import React, { useState } from "react";
 import { api } from "@/api/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, ChevronDown, ChevronUp, Save, Loader2, ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
 import { motion, AnimatePresence } from "framer-motion";
-
-interface Era {
-  title: string;
-  year_range: string;
-  image_url: string;
-  caption: string;
-  credit: string;
-  [key: string]: string;
-}
-
-interface SignaturePiece {
-  name: string;
-  image_url: string;
-  brand: string;
-  price: string;
-  farfetch_url: string;
-  [key: string]: string;
-}
-
-interface Designer {
-  id?: number;
-  name: string;
-  slug: string;
-  phonetic: string;
-  audio_url: string;
-  origin_meaning: string;
-  hero_image_url: string;
-  founder: string;
-  founded_year: string;
-  origin_location: string;
-  creative_director: string;
-  known_for_tags: string[];
-  eras: Era[];
-  signature_pieces: SignaturePiece[];
-  created_at?: string;
-  updated_at?: string;
-  [key: string]: any;
-}
 
 export default function ContentEditor() {
   const queryClient = useQueryClient();
   const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [editingDesigner, setEditingDesigner] = useState<Designer | null>(null);
+  const [editingDesigner, setEditingDesigner] = useState<any>(null);
   const [saving, setSaving] = useState(false);
 
-  const { data: designers = [], isLoading } = useQuery<Designer[]>({
+  const { data: designers = [], isLoading } = useQuery({
     queryKey: ["designers-admin"],
     queryFn: () => api.designers.list(),
   });
 
-  const emptyDesigner: Designer = {
+  const emptyDesigner = {
     name: "", slug: "", phonetic: "", audio_url: "", origin_meaning: "",
     hero_image_url: "", founder: "", founded_year: "", origin_location: "",
     creative_director: "", known_for_tags: [],
@@ -64,14 +24,10 @@ export default function ContentEditor() {
 
   const handleSave = async () => {
     setSaving(true);
-    const data = { ...editingDesigner };
-    const id = data.id;
-    delete data.id;
-    delete data.created_at;
-    delete data.updated_at;
+    const { id, created_at, updated_at, ...data } = editingDesigner;
 
-    if (id) {
-      await api.designers.update(id, data);
+    if (editingDesigner.id) {
+      await api.designers.update(editingDesigner.id, data);
     } else {
       await api.designers.create(data);
     }
@@ -87,17 +43,17 @@ export default function ContentEditor() {
   };
 
   const updateField = (field: string, value: any) => {
-    setEditingDesigner({ ...editingDesigner!, [field]: value });
+    setEditingDesigner({ ...editingDesigner, [field]: value });
   };
 
-  const updateEra = (index: number, field: string, value: string) => {
-    const eras = [...(editingDesigner!.eras || [])];
+  const updateEra = (index: number, field: string, value: any) => {
+    const eras = [...(editingDesigner.eras || [])];
     eras[index] = { ...eras[index], [field]: value };
     updateField("eras", eras);
   };
 
-  const updatePiece = (index: number, field: string, value: string) => {
-    const pieces = [...(editingDesigner!.signature_pieces || [])];
+  const updatePiece = (index: number, field: string, value: any) => {
+    const pieces = [...(editingDesigner.signature_pieces || [])];
     pieces[index] = { ...pieces[index], [field]: value };
     updateField("signature_pieces", pieces);
   };
@@ -118,7 +74,6 @@ export default function ContentEditor() {
         </h1>
 
         <div className="space-y-6">
-          {/* Basic fields */}
           <div className="space-y-3">
             <p className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium">Basic Info</p>
             {["name", "slug", "phonetic", "audio_url", "origin_meaning", "hero_image_url"].map((field) => (
@@ -136,7 +91,6 @@ export default function ContentEditor() {
             ))}
           </div>
 
-          {/* Facts */}
           <div className="space-y-3">
             <p className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium">Facts</p>
             {["founder", "founded_year", "origin_location", "creative_director"].map((field) => (
@@ -156,14 +110,13 @@ export default function ContentEditor() {
               <label className="text-xs text-gray-500 mb-1 block">Known For Tags (comma separated)</label>
               <input
                 type="text"
-                value={(editingDesigner.known_for_tags || []).join(", ")}
-                onChange={(e) => updateField("known_for_tags", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))}
+                value={(editingDesigner.known_for_tags || []).map((t: any) => t.name || t).join(", ")}
+                onChange={(e) => updateField("known_for_tags", e.target.value.split(",").map((s: string) => ({ name: s.trim(), description: "" })).filter((t: any) => t.name))}
                 className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-gray-400"
               />
             </div>
           </div>
 
-          {/* Eras */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium">Eras</p>
@@ -174,11 +127,11 @@ export default function ContentEditor() {
                 <Plus className="w-3 h-3" /> Add Era
               </button>
             </div>
-            {(editingDesigner.eras || []).map((era, i) => (
+            {(editingDesigner.eras || []).map((era: any, i: number) => (
               <div key={i} className="p-4 border border-gray-100 rounded-xl space-y-2">
                 <div className="flex justify-between">
                   <span className="text-xs font-medium text-gray-500">Era {i + 1}</span>
-                  <button onClick={() => updateField("eras", editingDesigner.eras.filter((_, j) => j !== i))} className="text-red-400">
+                  <button onClick={() => updateField("eras", editingDesigner.eras.filter((_: any, j: number) => j !== i))} className="text-red-400">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -196,7 +149,6 @@ export default function ContentEditor() {
             ))}
           </div>
 
-          {/* Signature Pieces */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium">Signature Pieces</p>
@@ -207,11 +159,11 @@ export default function ContentEditor() {
                 <Plus className="w-3 h-3" /> Add Piece
               </button>
             </div>
-            {(editingDesigner.signature_pieces || []).map((piece, i) => (
+            {(editingDesigner.signature_pieces || []).map((piece: any, i: number) => (
               <div key={i} className="p-4 border border-gray-100 rounded-xl space-y-2">
                 <div className="flex justify-between">
                   <span className="text-xs font-medium text-gray-500">Piece {i + 1}</span>
-                  <button onClick={() => updateField("signature_pieces", editingDesigner.signature_pieces.filter((_, j) => j !== i))} className="text-red-400">
+                  <button onClick={() => updateField("signature_pieces", editingDesigner.signature_pieces.filter((_: any, j: number) => j !== i))} className="text-red-400">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -260,14 +212,14 @@ export default function ContentEditor() {
         </div>
       ) : (
         <div className="space-y-3">
-          {designers.map((d) => (
+          {(designers as any[]).map((d: any) => (
             <div
               key={d.id}
               className="border border-gray-100 rounded-xl overflow-hidden"
             >
               <div
                 className="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-gray-50 transition-colors"
-                onClick={() => setExpandedId(expandedId === d.id ? null : d.id ?? null)}
+                onClick={() => setExpandedId(expandedId === d.id ? null : d.id)}
               >
                 <div className="flex items-center gap-3">
                   {d.hero_image_url && (
@@ -291,7 +243,7 @@ export default function ContentEditor() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDelete(d.id!);
+                      handleDelete(d.id);
                     }}
                     className="p-2 rounded-full hover:bg-gray-100 transition-colors"
                   >
@@ -317,7 +269,7 @@ export default function ContentEditor() {
                       <p><strong>Founded:</strong> {d.founded_year}</p>
                       <p><strong>Origin:</strong> {d.origin_location}</p>
                       <p><strong>Creative Director:</strong> {d.creative_director}</p>
-                      <p><strong>Tags:</strong> {d.known_for_tags?.join(", ")}</p>
+                      <p><strong>Tags:</strong> {d.known_for_tags?.map((t: any) => t.name || t).join(", ")}</p>
                       <p><strong>Eras:</strong> {d.eras?.length || 0}</p>
                       <p><strong>Signature Pieces:</strong> {d.signature_pieces?.length || 0}</p>
                     </div>

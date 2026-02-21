@@ -1,28 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { api } from "@/api/client";
-import { useAuth } from "@/lib/AuthContext";
 import { motion } from "framer-motion";
 import { X, Plus, Check, Loader2 } from "lucide-react";
-
-interface ItemData {
-  item_type: string;
-  designer_id: number;
-  title: string;
-  image_url: string;
-  subtitle?: string;
-  external_url?: string;
-}
-
-interface SaveToCollectionModalProps {
-  onClose: () => void;
-  onSaved: () => void;
-  itemData: ItemData;
-}
-
-interface Collection {
-  id: number;
-  name: string;
-}
+import { useAuth } from "@/lib/AuthContext";
 
 const DEFAULT_COLLECTIONS = [
   "Designers to remember",
@@ -31,30 +11,35 @@ const DEFAULT_COLLECTIONS = [
   "Research for later",
 ];
 
+interface SaveToCollectionModalProps {
+  onClose: () => void;
+  onSaved: () => void;
+  itemData: Record<string, unknown>;
+}
+
 export default function SaveToCollectionModal({ onClose, onSaved, itemData }: SaveToCollectionModalProps) {
-  const [collections, setCollections] = useState<Collection[]>([]);
+  const { user } = useAuth();
+  const [collections, setCollections] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [showNew, setShowNew] = useState(false);
   const [newName, setNewName] = useState("");
-  const { user } = useAuth();
 
   useEffect(() => {
     loadCollections();
   }, []);
 
   const loadCollections = async () => {
-    const cols = await api.collections.filter({
-      owner_email: user!.email,
-    });
+    if (!user) return;
+    const cols = await api.collections.filter({ owner_email: user.email }) as any[];
     if (cols.length === 0) {
       const created = await api.collections.bulkCreate(
         DEFAULT_COLLECTIONS.map((name) => ({
           name,
-          owner_email: user!.email,
+          owner_email: user.email,
         }))
-      );
+      ) as any[];
       setCollections(created);
     } else {
       setCollections(cols);
@@ -63,11 +48,11 @@ export default function SaveToCollectionModal({ onClose, onSaved, itemData }: Sa
   };
 
   const handleCreateNew = async () => {
-    if (!newName.trim()) return;
+    if (!newName.trim() || !user) return;
     const col = await api.collections.create({
       name: newName.trim(),
-      owner_email: user!.email,
-    });
+      owner_email: user.email,
+    }) as any;
     setCollections([...collections, col]);
     setSelectedId(col.id);
     setShowNew(false);
@@ -75,12 +60,12 @@ export default function SaveToCollectionModal({ onClose, onSaved, itemData }: Sa
   };
 
   const handleSave = async () => {
-    if (!selectedId) return;
+    if (!selectedId || !user) return;
     setSaving(true);
     await api.savedItems.create({
       ...itemData,
       collection_id: selectedId,
-      owner_email: user!.email,
+      owner_email: user.email,
     });
     setSaving(false);
     onSaved();

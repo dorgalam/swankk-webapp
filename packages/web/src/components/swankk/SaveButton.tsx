@@ -1,17 +1,17 @@
 import React, { useState } from "react";
 import { Bookmark } from "lucide-react";
-import { useAuth } from "@/lib/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/lib/AuthContext";
 import SaveToCollectionModal from "./SaveToCollectionModal";
 
 interface SaveButtonProps {
   itemType: string;
-  designerId: number;
+  designerId?: number | string;
   title: string;
-  imageUrl: string;
+  imageUrl?: string;
   subtitle?: string;
   externalUrl?: string;
-  iconColor?: string;
+  iconColor?: "black" | "white" | "gray";
 }
 
 export default function SaveButton({
@@ -23,10 +23,10 @@ export default function SaveButton({
   externalUrl,
   iconColor = "gray",
 }: SaveButtonProps) {
-  const [showModal, setShowModal] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const [showModal, setShowModal] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
