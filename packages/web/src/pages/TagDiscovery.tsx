@@ -4,11 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl, shuffle } from "@/utils";
+import RelatedTags from "@/components/swankk/RelatedTags";
 
 export default function TagDiscovery() {
   const urlParams = new URLSearchParams(window.location.search);
-  const tagName = urlParams.get("tag");
+  const tagSlug = urlParams.get("slug");
   const navigate = useNavigate();
 
   const { data: designers = [], isLoading } = useQuery({
@@ -16,27 +17,51 @@ export default function TagDiscovery() {
     queryFn: () => api.designers.list(),
   });
 
-  const matchingDesigners = (designers as any[]).filter((d: any) =>
-    d.known_for_tags?.some((t: any) => (t.name || t).toLowerCase() === tagName?.toLowerCase())
+  const { data: styles = [], isLoading: stylesLoading } = useQuery({
+    queryKey: ["styles"],
+    queryFn: () => api.styles.list(),
+  });
+
+  const { data: allTrends = [] } = useQuery({
+    queryKey: ["trends"],
+    queryFn: () => api.trends.list(),
+  });
+
+  // Support both ?tag=Name (legacy) and ?slug=slug (new)
+  const tagName = urlParams.get("tag")
+    ?? (tagSlug ? (styles as any[]).find((s: any) => s.slug === tagSlug)?.name ?? tagSlug : null);
+
+  const currentStyle = tagSlug
+    ? (styles as any[]).find((s: any) => s.slug === tagSlug)
+    : (styles as any[]).find((s: any) => s.name?.toLowerCase() === tagName?.toLowerCase());
+
+  const matchingDesigners = shuffle(
+    (designers as any[]).filter((d: any) =>
+      d.known_for_tags?.some((t: any) => (t.name || t).toLowerCase() === tagName?.toLowerCase())
+    )
   );
 
-  const allEras = matchingDesigners.flatMap((designer: any) =>
-    (designer.eras || []).map((era: any) => ({
-      ...era,
-      designer_name: designer.name,
-      designer_slug: designer.slug,
-      designer_id: designer.id,
-    }))
+  const allEras = shuffle(
+    matchingDesigners.flatMap((designer: any) =>
+      (designer.eras || []).map((era: any) => ({
+        ...era,
+        designer_name: designer.name,
+        designer_slug: designer.slug,
+        designer_id: designer.id,
+      }))
+    )
   );
 
-  const allSignaturePieces = matchingDesigners.flatMap((designer: any) =>
-    (designer.signature_pieces || []).map((piece: any) => ({
-      ...piece,
-      designer_name: designer.name,
-    }))
+  const allSignaturePieces = shuffle(
+    matchingDesigners.flatMap((designer: any) =>
+      (designer.signature_pieces || []).map((piece: any) => ({
+        ...piece,
+        designer_name: designer.name,
+      }))
+    )
   );
 
-  if (isLoading) {
+  if (isLoading || stylesLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="w-6 h-6 border-2 border-gray-200 border-t-black rounded-full animate-spin" />
@@ -159,7 +184,7 @@ export default function TagDiscovery() {
               Visual Gallery
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-              {allEras.flatMap((era: any) => (era.images || []))
+              {shuffle(allEras.flatMap((era: any) => (era.images || [])))
                 .slice(0, 12)
                 .map((imgUrl: string, i: number) => (
                   <div key={i} className="aspect-[3/4] rounded-lg overflow-hidden">
@@ -214,6 +239,22 @@ export default function TagDiscovery() {
               Explore other designers
             </Link>
           </div>
+        )}
+
+        {currentStyle && (currentStyle.related_tags || []).length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            <div className="h-px bg-gray-100 my-4" />
+            <RelatedTags
+              relatedTags={currentStyle.related_tags || []}
+              allDesigners={designers as any[]}
+              allStyles={styles as any[]}
+              allTrends={allTrends as any[]}
+            />
+          </motion.div>
         )}
       </div>
     </div>

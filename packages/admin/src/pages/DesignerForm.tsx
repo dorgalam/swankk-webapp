@@ -9,8 +9,9 @@ import AddIcon from '@mui/icons-material/Add'
 import DeleteIcon from '@mui/icons-material/Delete'
 import SaveIcon from '@mui/icons-material/Save'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
-import adminApi, { slugify, KEYWORDS_LIST } from '@/api/adminApi'
+import adminApi, { slugify, STYLES_LIST } from '@/api/adminApi'
 import UrlOrUploadField from '@/components/UrlOrUploadField'
+import type { Designer, Style, Trend } from '@/api/adminApi'
 
 interface TagItem {
   name: string
@@ -45,6 +46,7 @@ interface DesignerFormState {
   known_for_tags: TagItem[]
   eras: EraItem[]
   signature_pieces: PieceItem[]
+  related_tags: string[]
   created_at?: string
   updated_at?: string
   [key: string]: unknown
@@ -53,7 +55,7 @@ interface DesignerFormState {
 const emptyDesigner: DesignerFormState = {
   name: '', slug: '', phonetic: '', audio_url: '', origin_meaning: '',
   hero_image_url: '', founder: '', founded_year: '', origin_location: '',
-  creative_director: '', known_for_tags: [], eras: [], signature_pieces: [],
+  creative_director: '', known_for_tags: [], eras: [], signature_pieces: [], related_tags: [],
 }
 
 const emptyEra: EraItem = { title: '', year_range: '', description: '', images: [] }
@@ -124,13 +126,34 @@ export default function DesignerForm() {
 
   const [form, setForm] = useState<DesignerFormState>({ ...emptyDesigner })
   const [saving, setSaving] = useState(false)
-  const [keywordInput, setKeywordInput] = useState('')
+  const [styleInput, setStyleInput] = useState('')
 
   const { data: existing, isLoading } = useQuery({
     queryKey: ['admin-designer', id],
     queryFn: () => adminApi.designers.getById(id!),
     enabled: isEdit,
   })
+
+  const { data: allDesigners = [] } = useQuery<Designer[]>({
+    queryKey: ['admin-designers'],
+    queryFn: () => adminApi.designers.list(),
+  })
+
+  const { data: styles = [] } = useQuery<Style[]>({
+    queryKey: ['admin-styles'],
+    queryFn: () => adminApi.styles.list(),
+  })
+
+  const { data: allTrends = [] } = useQuery<Trend[]>({
+    queryKey: ['admin-trends'],
+    queryFn: () => adminApi.trends.list(),
+  })
+
+  const relatedTagOptions = [
+    ...(allDesigners as Designer[]).filter((d) => d.slug !== form.slug).map((d) => ({ label: `${d.name} · designer`, value: `designer:${d.slug}` })),
+    ...(styles as Style[]).map((s) => ({ label: `${s.name} · style`, value: `style:${s.slug}` })),
+    ...(allTrends as Trend[]).map((t) => ({ label: `${t.name} · trend`, value: `trend:${t.slug}` })),
+  ]
 
   useEffect(() => {
     if (isEdit && existing) {
@@ -325,18 +348,18 @@ export default function DesignerForm() {
         />
       </Paper>
 
-      {/* Known For Keywords */}
+      {/* Known For Styles */}
       <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="subtitle2" gutterBottom>Known For Keywords</Typography>
+        <Typography variant="subtitle2" gutterBottom>Known For Styles</Typography>
         <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
-          Select from the closed list of {KEYWORDS_LIST.length} keywords. Add a custom description per keyword (optional).
+          Select from the closed list of {STYLES_LIST.length} styles. Add a custom description per style (optional).
         </Typography>
         <Autocomplete
-          options={KEYWORDS_LIST.filter(
-            (kw) => !form.known_for_tags.some((t) => t.name === kw)
+          options={STYLES_LIST.filter(
+            (s) => !form.known_for_tags.some((t) => t.name === s)
           )}
-          inputValue={keywordInput}
-          onInputChange={(_, v) => setKeywordInput(v)}
+          inputValue={styleInput}
+          onInputChange={(_, v) => setStyleInput(v)}
           value={null}
           onChange={(_, newValue) => {
             if (!newValue) return
@@ -344,13 +367,13 @@ export default function DesignerForm() {
               ...prev,
               known_for_tags: [...prev.known_for_tags, { name: newValue, description: '' }],
             }))
-            setKeywordInput('')
+            setStyleInput('')
           }}
           renderInput={(params) => (
             <TextField
               {...params}
               size="small"
-              placeholder="Search and add keyword..."
+              placeholder="Search and add style..."
               sx={{ mb: 2 }}
             />
           )}
@@ -378,6 +401,39 @@ export default function DesignerForm() {
             />
           </Box>
         ))}
+      </Paper>
+
+      {/* Related Tags */}
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Typography variant="subtitle2" gutterBottom>Related Tags</Typography>
+        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
+          Link to related designers, styles, and trends for discovery navigation.
+        </Typography>
+        <Autocomplete
+          multiple
+          options={relatedTagOptions}
+          getOptionLabel={(o) => o.label}
+          value={relatedTagOptions.filter((o) => (form.related_tags || []).includes(o.value))}
+          onChange={(_, newValue) => setForm((prev) => ({ ...prev, related_tags: newValue.map((v) => v.value) }))}
+          isOptionEqualToValue={(a, b) => a.value === b.value}
+          renderTags={(value, getTagProps) =>
+            value.map((option, index) => (
+              <Chip
+                label={option.label}
+                size="small"
+                {...getTagProps({ index })}
+                key={option.value}
+              />
+            ))
+          }
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              size="small"
+              placeholder="Search designers, styles, trends..."
+            />
+          )}
+        />
       </Paper>
 
       {/* Eras */}

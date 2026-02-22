@@ -69,6 +69,9 @@ export const api = {
     create: (data: Record<string, unknown>) => request('/saved-items', { method: 'POST', body: JSON.stringify(data) }),
     delete: (id: number | string) => request(`/saved-items/${id}`, { method: 'DELETE' }),
   },
+  styles: {
+    list: () => request('/styles'),
+  },
   designerRequests: {
     create: (data: Record<string, unknown>) => request('/designer-requests', { method: 'POST', body: JSON.stringify(data) }),
   },

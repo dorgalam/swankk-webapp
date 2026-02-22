@@ -4,7 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl, shuffle } from "@/utils";
+import RelatedTags from "@/components/swankk/RelatedTags";
 
 export default function TrendDetail() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -18,6 +19,21 @@ export default function TrendDetail() {
   const { data: trends = [], isLoading } = useQuery({
     queryKey: ["trend", slug],
     queryFn: () => api.trends.filter({ slug }),
+  });
+
+  const { data: allDesigners = [] } = useQuery({
+    queryKey: ["designers"],
+    queryFn: () => api.designers.list(),
+  });
+
+  const { data: allStyles = [] } = useQuery({
+    queryKey: ["styles"],
+    queryFn: () => api.styles.list(),
+  });
+
+  const { data: allTrends = [] } = useQuery({
+    queryKey: ["trends"],
+    queryFn: () => api.trends.list(),
   });
 
   const trend = (trends as any[])[0];
@@ -44,7 +60,7 @@ export default function TrendDetail() {
     );
   }
 
-  const images = trend.images || [];
+  const images = shuffle(trend.images || []);
 
   return (
     <div className="pb-20">
@@ -77,7 +93,7 @@ export default function TrendDetail() {
       </div>
 
       <div className="px-5 md:px-8">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 mb-12">
           {images.map((img: any, index: number) => (
             <motion.div
               key={index}
@@ -101,6 +117,13 @@ export default function TrendDetail() {
             </motion.div>
           ))}
         </div>
+
+        <RelatedTags
+          relatedTags={trend.related_tags || []}
+          allDesigners={allDesigners as any[]}
+          allStyles={allStyles as any[]}
+          allTrends={allTrends as any[]}
+        />
       </div>
     </div>
   );

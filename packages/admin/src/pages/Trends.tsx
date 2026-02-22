@@ -65,7 +65,7 @@ export default function Trends() {
                 <TableRow>
                   <TableCell sx={{ fontWeight: 600 }}>Name</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>Description</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Keywords</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Related Tags</TableCell>
                   <TableCell align="center" sx={{ fontWeight: 600 }}>Images</TableCell>
                   <TableCell align="center" sx={{ fontWeight: 600 }}>Products</TableCell>
                   <TableCell />
@@ -95,11 +95,11 @@ export default function Trends() {
                     </TableCell>
                     <TableCell sx={{ maxWidth: 200 }}>
                       <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-                        {trend.keywords.slice(0, 3).map((kw) => (
-                          <Chip key={kw} label={kw} size="small" variant="outlined" />
+                        {(trend.related_tags || []).slice(0, 3).map((tag) => (
+                          <Chip key={tag} label={tag.split(':')[1] ?? tag} size="small" variant="outlined" />
                         ))}
-                        {trend.keywords.length > 3 && (
-                          <Chip label={`+${trend.keywords.length - 3}`} size="small" />
+                        {(trend.related_tags || []).length > 3 && (
+                          <Chip label={`+${trend.related_tags.length - 3}`} size="small" />
                         )}
                       </Stack>
                     </TableCell>

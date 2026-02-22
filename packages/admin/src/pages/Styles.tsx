@@ -3,35 +3,37 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Box, Typography, Paper, TextField, Button, CircularProgress,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Chip, Collapse, List, ListItem, ListItemText, Divider,
+  Chip, Collapse, List, ListItem, ListItemText, Divider, Autocomplete,
 } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import SaveIcon from '@mui/icons-material/Save'
-import adminApi, { KEYWORDS_LIST } from '@/api/adminApi'
-import type { Keyword, Designer } from '@/api/adminApi'
+import adminApi, { STYLES_LIST } from '@/api/adminApi'
+import type { Style, Designer, Trend } from '@/api/adminApi'
 
-interface KeywordRowProps {
-  keyword: Keyword
-  onSave: (id: number, description: string) => Promise<void>
+interface StyleRowProps {
+  style: Style
+  allOptions: { label: string; value: string }[]
+  onSave: (id: number, description: string, relatedTags: string[]) => Promise<void>
 }
 
-function KeywordRow({ keyword, onSave }: KeywordRowProps) {
+function StyleRow({ style, allOptions, onSave }: StyleRowProps) {
   const [expanded, setExpanded] = useState(false)
-  const [description, setDescription] = useState(keyword.description || '')
+  const [description, setDescription] = useState(style.description || '')
+  const [relatedTags, setRelatedTags] = useState<string[]>(style.related_tags || [])
   const [saving, setSaving] = useState(false)
   const [dirty, setDirty] = useState(false)
 
   const { data: relatedDesigners, isLoading: loadingDesigners } = useQuery<Designer[]>({
-    queryKey: ['keyword-designers', keyword.name],
-    queryFn: () => adminApi.keywords.relatedDesigners(keyword.name),
+    queryKey: ['style-designers', style.name],
+    queryFn: () => adminApi.styles.relatedDesigners(style.name),
     enabled: expanded,
   })
 
   const handleSave = async () => {
     setSaving(true)
     try {
-      await onSave(keyword.id, description)
+      await onSave(style.id, description, relatedTags)
       setDirty(false)
     } finally {
       setSaving(false)
@@ -41,8 +43,8 @@ function KeywordRow({ keyword, onSave }: KeywordRowProps) {
   return (
     <>
       <TableRow hover>
-        <TableCell sx={{ fontWeight: 500 }}>{keyword.name}</TableCell>
-        <TableCell sx={{ maxWidth: 300 }}>
+        <TableCell sx={{ fontWeight: 500 }}>{style.name}</TableCell>
+        <TableCell sx={{ maxWidth: 280 }}>
           <TextField
             size="small"
             fullWidth
@@ -54,11 +56,41 @@ function KeywordRow({ keyword, onSave }: KeywordRowProps) {
             variant="standard"
           />
         </TableCell>
+        <TableCell sx={{ minWidth: 260 }}>
+          <Autocomplete
+            multiple
+            size="small"
+            options={allOptions.filter((o) => {
+              const slug = o.value.split(':')[1]
+              return slug !== style.slug
+            })}
+            getOptionLabel={(o) => o.label}
+            value={allOptions.filter((o) => relatedTags.includes(o.value))}
+            onChange={(_, newVal) => {
+              setRelatedTags(newVal.map((v) => v.value))
+              setDirty(true)
+            }}
+            isOptionEqualToValue={(a, b) => a.value === b.value}
+            renderTags={(value, getTagProps) =>
+              value.map((option, index) => (
+                <Chip
+                  {...getTagProps({ index })}
+                  key={option.value}
+                  label={option.label}
+                  size="small"
+                />
+              ))
+            }
+            renderInput={(params) => (
+              <TextField {...params} variant="standard" placeholder="Add related tags..." />
+            )}
+          />
+        </TableCell>
         <TableCell align="center">
           <Chip
-            label={keyword.designer_count ?? 0}
+            label={style.designer_count ?? 0}
             size="small"
-            color={(keyword.designer_count ?? 0) > 0 ? 'primary' : 'default'}
+            color={(style.designer_count ?? 0) > 0 ? 'primary' : 'default'}
           />
         </TableCell>
         <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
@@ -78,7 +110,7 @@ function KeywordRow({ keyword, onSave }: KeywordRowProps) {
             size="small"
             endIcon={expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
             onClick={() => setExpanded(!expanded)}
-            disabled={(keyword.designer_count ?? 0) === 0}
+            disabled={(style.designer_count ?? 0) === 0}
           >
             Designers
           </Button>
@@ -87,7 +119,7 @@ function KeywordRow({ keyword, onSave }: KeywordRowProps) {
 
       {expanded && (
         <TableRow>
-          <TableCell colSpan={4} sx={{ py: 0, bgcolor: 'action.hover' }}>
+          <TableCell colSpan={5} sx={{ py: 0, bgcolor: 'action.hover' }}>
             <Collapse in={expanded}>
               <Box sx={{ py: 1, px: 2 }}>
                 {loadingDesigners ? (
@@ -96,7 +128,7 @@ function KeywordRow({ keyword, onSave }: KeywordRowProps) {
                   </Box>
                 ) : relatedDesigners?.length === 0 ? (
                   <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>
-                    No designers tagged with this keyword.
+                    No designers tagged with this style.
                   </Typography>
                 ) : (
                   <List dense disablePadding>
@@ -124,35 +156,53 @@ function KeywordRow({ keyword, onSave }: KeywordRowProps) {
   )
 }
 
-export default function Keywords() {
+export default function Styles() {
   const queryClient = useQueryClient()
 
-  const { data: keywords, isLoading } = useQuery<Keyword[]>({
-    queryKey: ['admin-keywords'],
-    queryFn: () => adminApi.keywords.list(),
+  const { data: styles, isLoading } = useQuery<Style[]>({
+    queryKey: ['admin-styles'],
+    queryFn: () => adminApi.styles.list(),
   })
 
-  // Merge DB keywords with the closed list so all 49 always appear
-  const mergedKeywords: Keyword[] = KEYWORDS_LIST.map((name) => {
-    const fromDb = keywords?.find((k) => k.name === name)
+  const { data: designers = [] } = useQuery<Designer[]>({
+    queryKey: ['admin-designers'],
+    queryFn: () => adminApi.designers.list(),
+  })
+
+  const { data: trends = [] } = useQuery<Trend[]>({
+    queryKey: ['admin-trends'],
+    queryFn: () => adminApi.trends.list(),
+  })
+
+  // Build combined options list for Related Tags autocomplete
+  const allOptions: { label: string; value: string }[] = [
+    ...(designers as Designer[]).map((d) => ({ label: `${d.name} · designer`, value: `designer:${d.slug}` })),
+    ...(styles || []).map((s) => ({ label: `${s.name} · style`, value: `style:${s.slug}` })),
+    ...(trends as Trend[]).map((t) => ({ label: `${t.name} · trend`, value: `trend:${t.slug}` })),
+  ]
+
+  // Merge DB styles with the closed list so all always appear
+  const mergedStyles: Style[] = STYLES_LIST.map((name) => {
+    const fromDb = styles?.find((s) => s.name === name)
     if (fromDb) return fromDb
     return { id: 0, name, slug: '', description: '', designer_count: 0 }
   })
 
-  const handleSave = async (id: number, description: string) => {
-    await adminApi.keywords.updateDescription(id, description)
-    queryClient.invalidateQueries({ queryKey: ['admin-keywords'] })
+  const handleSave = async (id: number, description: string, relatedTags: string[]) => {
+    await adminApi.styles.updateDescription(id, description)
+    await adminApi.styles.updateRelatedTags(id, relatedTags)
+    queryClient.invalidateQueries({ queryKey: ['admin-styles'] })
   }
 
-  const totalDesigners = mergedKeywords.reduce((sum, k) => sum + (k.designer_count ?? 0), 0)
+  const totalDesigners = mergedStyles.reduce((sum, s) => sum + (s.designer_count ?? 0), 0)
 
   return (
     <Box>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
         <Box>
-          <Typography variant="h4" gutterBottom>Keywords</Typography>
+          <Typography variant="h4" gutterBottom>Styles</Typography>
           <Typography variant="body2" color="text.secondary">
-            Closed list of {KEYWORDS_LIST.length} keywords shared across designers, eras, trends and images.
+            Closed list of {STYLES_LIST.length} fashion styles shared across designers, eras, trends and images.
             {!isLoading && ` · ${totalDesigners} total designer tags`}
           </Typography>
         </Box>
@@ -168,17 +218,19 @@ export default function Keywords() {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 600 }}>Keyword</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Style</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>Description</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Related Tags</TableCell>
                   <TableCell align="center" sx={{ fontWeight: 600 }}>Designers</TableCell>
                   <TableCell />
                 </TableRow>
               </TableHead>
               <TableBody>
-                {mergedKeywords.map((kw) => (
-                  <KeywordRow
-                    key={kw.name}
-                    keyword={kw}
+                {mergedStyles.map((style) => (
+                  <StyleRow
+                    key={style.name}
+                    style={style}
+                    allOptions={allOptions}
                     onSave={handleSave}
                   />
                 ))}

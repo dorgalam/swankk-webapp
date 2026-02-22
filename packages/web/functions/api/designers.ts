@@ -1,6 +1,6 @@
 import type { Env } from '../../../../types/env';
 
-const JSON_FIELDS = ['known_for_tags', 'eras', 'signature_pieces'];
+const JSON_FIELDS = ['known_for_tags', 'eras', 'signature_pieces', 'related_tags'];
 
 function parseRow(row: Record<string, unknown> | null): Record<string, unknown> | null {
   if (!row) return row;
@@ -22,18 +22,19 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await context.request.json() as Record<string, unknown>;
-  const { name, slug, phonetic, audio_url, origin_meaning, hero_image_url, founder, founded_year, origin_location, creative_director, known_for_tags, eras, signature_pieces } = body as Record<string, any>;
+  const { name, slug, phonetic, audio_url, origin_meaning, hero_image_url, founder, founded_year, origin_location, creative_director, known_for_tags, eras, signature_pieces, related_tags } = body as Record<string, any>;
 
   const result = await context.env.DB.prepare(
-    `INSERT INTO designers (name, slug, phonetic, audio_url, origin_meaning, hero_image_url, founder, founded_year, origin_location, creative_director, known_for_tags, eras, signature_pieces)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO designers (name, slug, phonetic, audio_url, origin_meaning, hero_image_url, founder, founded_year, origin_location, creative_director, known_for_tags, eras, signature_pieces, related_tags)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     name || '', slug || '', phonetic || '', audio_url || '', origin_meaning || '',
     hero_image_url || '', founder || '', founded_year || '', origin_location || '',
     creative_director || '',
     JSON.stringify(known_for_tags || []),
     JSON.stringify(eras || []),
-    JSON.stringify(signature_pieces || [])
+    JSON.stringify(signature_pieces || []),
+    JSON.stringify(related_tags || [])
   ).run();
 
   const row = await context.env.DB.prepare('SELECT * FROM designers WHERE id = ?').bind(result.meta.last_row_id).first();

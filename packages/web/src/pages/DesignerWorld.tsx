@@ -9,6 +9,7 @@ import QuickFacts from "@/components/swankk/QuickFacts";
 import ErasCarousel from "@/components/swankk/ErasCarousel";
 import SignaturePieces from "@/components/swankk/SignaturePieces";
 import SaveButton from "@/components/swankk/SaveButton";
+import RelatedTags from "@/components/swankk/RelatedTags";
 
 export default function DesignerWorld() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -23,6 +24,21 @@ export default function DesignerWorld() {
   const { data: designers = [], isLoading } = useQuery({
     queryKey: ["designer", slug],
     queryFn: () => api.designers.filter({ slug }),
+  });
+
+  const { data: allDesigners = [] } = useQuery({
+    queryKey: ["designers"],
+    queryFn: () => api.designers.list(),
+  });
+
+  const { data: allStyles = [] } = useQuery({
+    queryKey: ["styles"],
+    queryFn: () => api.styles.list(),
+  });
+
+  const { data: allTrends = [] } = useQuery({
+    queryKey: ["trends"],
+    queryFn: () => api.trends.list(),
   });
 
   const designer = (designers as any[])[0];
@@ -139,6 +155,17 @@ export default function DesignerWorld() {
         <SignaturePieces designer={designer} />
         <div className="h-px bg-gray-100" />
         <ErasCarousel designer={designer} />
+        {(designer.related_tags || []).length > 0 && (
+          <>
+            <div className="h-px bg-gray-100" />
+            <RelatedTags
+              relatedTags={designer.related_tags || []}
+              allDesigners={allDesigners as any[]}
+              allStyles={allStyles as any[]}
+              allTrends={allTrends as any[]}
+            />
+          </>
+        )}
       </div>
     </div>
   );

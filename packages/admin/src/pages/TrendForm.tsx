@@ -9,23 +9,23 @@ import AddIcon from '@mui/icons-material/Add'
 import DeleteIcon from '@mui/icons-material/Delete'
 import SaveIcon from '@mui/icons-material/Save'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
-import adminApi, { slugify, KEYWORDS_LIST } from '@/api/adminApi'
+import adminApi, { slugify } from '@/api/adminApi'
 import UrlOrUploadField from '@/components/UrlOrUploadField'
-import type { TrendProduct } from '@/api/adminApi'
+import type { TrendProduct, Designer, Style, Trend } from '@/api/adminApi'
 
 interface TrendFormState {
   name: string
   slug: string
   context: string
   designer_slugs: string[]
-  keywords: string[]
+  related_tags: string[]
   images: string[]
   products: TrendProduct[]
 }
 
 const emptyForm: TrendFormState = {
   name: '', slug: '', context: '',
-  designer_slugs: [], keywords: [], images: [], products: [],
+  designer_slugs: [], related_tags: [], images: [], products: [],
 }
 
 const emptyProduct: TrendProduct = { name: '', image_url: '', link: '' }
@@ -45,6 +45,27 @@ export default function TrendForm() {
     enabled: isEdit,
   })
 
+  const { data: designers = [] } = useQuery<Designer[]>({
+    queryKey: ['admin-designers'],
+    queryFn: () => adminApi.designers.list(),
+  })
+
+  const { data: styles = [] } = useQuery<Style[]>({
+    queryKey: ['admin-styles'],
+    queryFn: () => adminApi.styles.list(),
+  })
+
+  const { data: allTrends = [] } = useQuery<Trend[]>({
+    queryKey: ['admin-trends'],
+    queryFn: () => adminApi.trends.list(),
+  })
+
+  const relatedTagOptions = [
+    ...(designers as Designer[]).map((d) => ({ label: `${d.name} · designer`, value: `designer:${d.slug}` })),
+    ...(styles as Style[]).map((s) => ({ label: `${s.name} · style`, value: `style:${s.slug}` })),
+    ...(allTrends as Trend[]).filter((t) => t.slug !== form.slug).map((t) => ({ label: `${t.name} · trend`, value: `trend:${t.slug}` })),
+  ]
+
   useEffect(() => {
     if (isEdit && existing) {
       setForm({
@@ -52,7 +73,7 @@ export default function TrendForm() {
         slug: existing.slug,
         context: existing.context || '',
         designer_slugs: existing.designer_slugs || [],
-        keywords: existing.keywords || [],
+        related_tags: existing.related_tags || [],
         images: existing.images || [],
         products: existing.products || [],
       })
@@ -153,24 +174,26 @@ export default function TrendForm() {
         />
       </Paper>
 
-      {/* Keywords */}
+      {/* Related Tags */}
       <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="subtitle2" gutterBottom>Keywords</Typography>
+        <Typography variant="subtitle2" gutterBottom>Related Tags</Typography>
         <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
-          Select from the closed list of {KEYWORDS_LIST.length} keywords.
+          Link to related designers, styles, and trends for discovery navigation.
         </Typography>
         <Autocomplete
           multiple
-          options={KEYWORDS_LIST}
-          value={form.keywords}
-          onChange={(_, newValue) => setForm((prev) => ({ ...prev, keywords: newValue }))}
+          options={relatedTagOptions}
+          getOptionLabel={(o) => o.label}
+          value={relatedTagOptions.filter((o) => form.related_tags.includes(o.value))}
+          onChange={(_, newValue) => setForm((prev) => ({ ...prev, related_tags: newValue.map((v) => v.value) }))}
+          isOptionEqualToValue={(a, b) => a.value === b.value}
           renderTags={(value, getTagProps) =>
             value.map((option, index) => (
               <Chip
-                label={option}
+                label={option.label}
                 size="small"
                 {...getTagProps({ index })}
-                key={option}
+                key={option.value}
               />
             ))
           }
@@ -178,7 +201,7 @@ export default function TrendForm() {
             <TextField
               {...params}
               size="small"
-              placeholder="Search and select keywords..."
+              placeholder="Search designers, styles, trends..."
             />
           )}
         />

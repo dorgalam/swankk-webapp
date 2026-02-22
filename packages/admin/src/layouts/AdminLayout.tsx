@@ -17,7 +17,7 @@ const DRAWER_WIDTH = 240
 const navItems = [
   { label: 'Dashboard', icon: <DashboardIcon />, path: '/' },
   { label: 'Designers', icon: <BrushIcon />, path: '/designers' },
-  { label: 'Keywords', icon: <LabelIcon />, path: '/keywords' },
+  { label: 'Styles', icon: <LabelIcon />, path: '/styles' },
   { label: 'Trends', icon: <TrendingUpIcon />, path: '/trends' },
   { label: 'Requests', icon: <InboxIcon />, path: '/requests' },
   { label: 'Users', icon: <PeopleIcon />, path: '/users' },

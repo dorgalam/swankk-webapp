@@ -18,14 +18,16 @@ interface DesignerRow {
   known_for_tags: string | Tag[]
   eras: string | Era[]
   signature_pieces: string | Piece[]
+  related_tags: string | string[]
   created_at?: string
   updated_at?: string
 }
 
-interface Designer extends Omit<DesignerRow, 'known_for_tags' | 'eras' | 'signature_pieces'> {
+interface Designer extends Omit<DesignerRow, 'known_for_tags' | 'eras' | 'signature_pieces' | 'related_tags'> {
   known_for_tags: Tag[]
   eras: Era[]
   signature_pieces: Piece[]
+  related_tags: string[]
 }
 
 interface Tag {
@@ -62,6 +64,7 @@ interface DesignerInput {
   known_for_tags?: Tag[]
   eras?: Era[]
   signature_pieces?: Piece[]
+  related_tags?: string[]
   [key: string]: unknown
 }
 
@@ -89,11 +92,12 @@ interface StatCounts {
   [key: string]: number
 }
 
-interface Keyword {
+interface Style {
   id: number
   name: string
   slug: string
   description: string
+  related_tags?: string[]
   designer_count?: number
   created_at?: string
   updated_at?: string
@@ -107,18 +111,18 @@ interface TrendRow {
   designer_slugs: string | string[]
   preview_images: string | string[]
   images: string | string[]
-  keywords: string | string[]
   products: string | TrendProduct[]
+  related_tags: string | string[]
   created_at?: string
   updated_at?: string
 }
 
-interface Trend extends Omit<TrendRow, 'designer_slugs' | 'preview_images' | 'images' | 'keywords' | 'products'> {
+interface Trend extends Omit<TrendRow, 'designer_slugs' | 'preview_images' | 'images' | 'products' | 'related_tags'> {
   designer_slugs: string[]
   preview_images: string[]
   images: string[]
-  keywords: string[]
   products: TrendProduct[]
+  related_tags: string[]
 }
 
 interface TrendProduct {
@@ -134,13 +138,13 @@ interface TrendInput {
   designer_slugs?: string[]
   preview_images?: string[]
   images?: string[]
-  keywords?: string[]
   products?: TrendProduct[]
+  related_tags?: string[]
   [key: string]: unknown
 }
 
-// The closed list of style keywords
-export const KEYWORDS_LIST = [
+// The closed list of fashion style concepts
+export const STYLES_LIST = [
   'Minimalist', 'Maximalist', 'Avant-garde', 'Classic', 'Romantic',
   'Futuristic', 'Streetwear', 'Couture', 'Tailoring', 'Deconstruction',
   'Bohemian', 'Glamour', 'Sporty', 'Utility', 'Heritage',
@@ -173,6 +177,7 @@ function parseDesignerRow(row: DesignerRow | undefined): Designer | null {
     known_for_tags: JSON.parse((row.known_for_tags as string) || '[]'),
     eras: JSON.parse((row.eras as string) || '[]'),
     signature_pieces: JSON.parse((row.signature_pieces as string) || '[]'),
+    related_tags: JSON.parse((row.related_tags as string) || '[]'),
   }
 }
 
@@ -183,8 +188,8 @@ function parseTrendRow(row: TrendRow | undefined): Trend | null {
     designer_slugs: JSON.parse((row.designer_slugs as string) || '[]'),
     preview_images: JSON.parse((row.preview_images as string) || '[]'),
     images: JSON.parse((row.images as string) || '[]'),
-    keywords: JSON.parse((row.keywords as string) || '[]'),
     products: JSON.parse((row.products as string) || '[]'),
+    related_tags: JSON.parse((row.related_tags as string) || '[]'),
   }
 }
 
@@ -232,8 +237,8 @@ const adminApi = {
       const { meta } = await query(
         `INSERT INTO designers (name, slug, phonetic, audio_url, origin_meaning, hero_image_url,
           founder, founded_year, origin_location, creative_director,
-          known_for_tags, eras, signature_pieces)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          known_for_tags, eras, signature_pieces, related_tags)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           data.name, slug, data.phonetic || '', data.audio_url || '',
           data.origin_meaning || '', data.hero_image_url || '',
@@ -242,6 +247,7 @@ const adminApi = {
           JSON.stringify(data.known_for_tags || []),
           JSON.stringify(data.eras || []),
           JSON.stringify(data.signature_pieces || []),
+          JSON.stringify(data.related_tags || []),
         ],
       )
       return meta
@@ -254,7 +260,7 @@ const adminApi = {
         'hero_image_url', 'founder', 'founded_year', 'origin_location',
         'creative_director',
       ]
-      const jsonFields = ['known_for_tags', 'eras', 'signature_pieces']
+      const jsonFields = ['known_for_tags', 'eras', 'signature_pieces', 'related_tags']
 
       for (const f of fields) {
         if (f in data) {
@@ -283,35 +289,47 @@ const adminApi = {
     },
   },
 
-  keywords: {
-    async list(): Promise<Keyword[]> {
+  styles: {
+    async list(): Promise<Style[]> {
       const { results } = await query(`
         SELECT
-          k.id, k.name, k.slug, k.description, k.created_at, k.updated_at,
+          k.id, k.name, k.slug, k.description, k.related_tags, k.created_at, k.updated_at,
           (SELECT COUNT(*) FROM designers d WHERE d.known_for_tags LIKE '%"' || k.name || '"%') AS designer_count
-        FROM keywords k
+        FROM styles k
         ORDER BY k.name ASC
       `)
-      return results as unknown as Keyword[]
+      return (results as unknown as (Style & { related_tags: string })[]).map((r) => ({
+        ...r,
+        related_tags: JSON.parse(r.related_tags || '[]'),
+      }))
     },
-    async getBySlug(slug: string): Promise<Keyword | null> {
+    async getBySlug(slug: string): Promise<Style | null> {
       const { results } = await query(
-        'SELECT * FROM keywords WHERE slug = ?',
+        'SELECT * FROM styles WHERE slug = ?',
         [slug],
       )
-      return (results[0] as unknown as Keyword) || null
+      const row = results[0] as unknown as (Style & { related_tags: string }) | undefined
+      if (!row) return null
+      return { ...row, related_tags: JSON.parse(row.related_tags || '[]') }
     },
     async updateDescription(id: number, description: string) {
       const { meta } = await query(
-        "UPDATE keywords SET description = ?, updated_at = datetime('now') WHERE id = ?",
+        "UPDATE styles SET description = ?, updated_at = datetime('now') WHERE id = ?",
         [description, id],
       )
       return meta
     },
-    async relatedDesigners(keywordName: string): Promise<Designer[]> {
+    async updateRelatedTags(id: number, related_tags: string[]) {
+      const { meta } = await query(
+        "UPDATE styles SET related_tags = ?, updated_at = datetime('now') WHERE id = ?",
+        [JSON.stringify(related_tags), id],
+      )
+      return meta
+    },
+    async relatedDesigners(styleName: string): Promise<Designer[]> {
       const { results } = await query(
         `SELECT * FROM designers WHERE known_for_tags LIKE ? ORDER BY name ASC`,
-        [`%"${keywordName}"%`],
+        [`%"${styleName}"%`],
       )
       return results.map((r) => parseDesignerRow(r as unknown as DesignerRow)!)
     },
@@ -336,15 +354,15 @@ const adminApi = {
       const images = data.images || []
       const preview_images = images.slice(0, 3)
       const { meta } = await query(
-        `INSERT INTO trends (name, slug, context, designer_slugs, preview_images, images, keywords, products)
+        `INSERT INTO trends (name, slug, context, designer_slugs, preview_images, images, products, related_tags)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           data.name, slug, data.context || '',
           JSON.stringify(data.designer_slugs || []),
           JSON.stringify(preview_images),
           JSON.stringify(images),
-          JSON.stringify(data.keywords || []),
           JSON.stringify(data.products || []),
+          JSON.stringify(data.related_tags || []),
         ],
       )
       return meta
@@ -355,15 +373,15 @@ const adminApi = {
       const { meta } = await query(
         `UPDATE trends SET
           name = ?, context = ?, designer_slugs = ?, preview_images = ?,
-          images = ?, keywords = ?, products = ?, updated_at = datetime('now')
+          images = ?, products = ?, related_tags = ?, updated_at = datetime('now')
          WHERE id = ?`,
         [
           data.name, data.context || '',
           JSON.stringify(data.designer_slugs || []),
           JSON.stringify(preview_images),
           JSON.stringify(images),
-          JSON.stringify(data.keywords || []),
           JSON.stringify(data.products || []),
+          JSON.stringify(data.related_tags || []),
           id,
         ],
       )
@@ -437,6 +455,6 @@ const adminApi = {
 export default adminApi
 export { slugify }
 export type {
-  Designer, DesignerInput, DesignerRequest, DesignerRow, Era, Keyword,
+  Designer, DesignerInput, DesignerRequest, DesignerRow, Era, Style,
   Piece, StatCounts, Tag, Trend, TrendInput, TrendProduct, User,
 }

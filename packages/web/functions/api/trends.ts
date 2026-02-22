@@ -1,6 +1,6 @@
 import type { Env } from '../../../../types/env';
 
-const JSON_FIELDS = ['designer_slugs', 'preview_images', 'images'];
+const JSON_FIELDS = ['designer_slugs', 'preview_images', 'images', 'related_tags'];
 
 function parseRow(row: Record<string, unknown> | null): Record<string, unknown> | null {
   if (!row) return row;
@@ -22,16 +22,17 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await context.request.json() as Record<string, any>;
-  const { name, slug, context: ctx, designer_slugs, preview_images, images } = body;
+  const { name, slug, context: ctx, designer_slugs, preview_images, images, related_tags } = body;
 
   const result = await context.env.DB.prepare(
-    `INSERT INTO trends (name, slug, context, designer_slugs, preview_images, images)
-     VALUES (?, ?, ?, ?, ?, ?)`
+    `INSERT INTO trends (name, slug, context, designer_slugs, preview_images, images, related_tags)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     name || '', slug || '', ctx || '',
     JSON.stringify(designer_slugs || []),
     JSON.stringify(preview_images || []),
-    JSON.stringify(images || [])
+    JSON.stringify(images || []),
+    JSON.stringify(related_tags || [])
   ).run();
 
   const row = await context.env.DB.prepare('SELECT * FROM trends WHERE id = ?').bind(result.meta.last_row_id).first();

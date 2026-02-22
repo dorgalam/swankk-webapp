@@ -1,6 +1,6 @@
 import type { Env } from '../../../../../types/env';
 
-const JSON_FIELDS = ['known_for_tags', 'eras', 'signature_pieces'];
+const JSON_FIELDS = ['known_for_tags', 'eras', 'signature_pieces', 'related_tags'];
 
 function parseRow(row: Record<string, unknown> | null): Record<string, unknown> | null {
   if (!row) return row;
@@ -20,7 +20,7 @@ export const onRequestPut: PagesFunction<Env> = async (context) => {
   const body = await context.request.json() as Record<string, unknown>;
   const fields: string[] = [];
   const values: unknown[] = [];
-  const allowed = ['name', 'slug', 'phonetic', 'audio_url', 'origin_meaning', 'hero_image_url', 'founder', 'founded_year', 'origin_location', 'creative_director', 'known_for_tags', 'eras', 'signature_pieces'];
+  const allowed = ['name', 'slug', 'phonetic', 'audio_url', 'origin_meaning', 'hero_image_url', 'founder', 'founded_year', 'origin_location', 'creative_director', 'known_for_tags', 'eras', 'signature_pieces', 'related_tags'];
 
   for (const key of allowed) {
     if (key in body) {

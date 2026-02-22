@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS designers (
   known_for_tags TEXT DEFAULT '[]',
   eras TEXT DEFAULT '[]',
   signature_pieces TEXT DEFAULT '[]',
+  related_tags TEXT NOT NULL DEFAULT '[]',
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -65,23 +66,24 @@ CREATE TABLE IF NOT EXISTS trends (
   designer_slugs TEXT DEFAULT '[]',
   preview_images TEXT DEFAULT '[]',
   images TEXT DEFAULT '[]',
-  keywords TEXT DEFAULT '[]',
   products TEXT DEFAULT '[]',
+  related_tags TEXT NOT NULL DEFAULT '[]',
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
-CREATE TABLE IF NOT EXISTS keywords (
+CREATE TABLE IF NOT EXISTS styles (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
   slug TEXT UNIQUE NOT NULL,
   description TEXT DEFAULT '',
+  related_tags TEXT NOT NULL DEFAULT '[]',
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- Seed the closed keywords list (49 designer names)
-INSERT OR IGNORE INTO keywords (name, slug) VALUES
+-- Seed the closed styles list (fashion aesthetic concepts)
+INSERT OR IGNORE INTO styles (name, slug) VALUES
   ('Louis Vuitton', 'louis-vuitton'),
   ('Chanel', 'chanel'),
   ('Dior', 'dior'),
@@ -132,6 +134,9 @@ INSERT OR IGNORE INTO keywords (name, slug) VALUES
   ('Marni', 'marni'),
   ('Hermès', 'hermes');
 
--- Run these ALTER TABLE statements on existing DBs:
--- ALTER TABLE trends ADD COLUMN keywords TEXT DEFAULT '[]';
--- ALTER TABLE trends ADD COLUMN products TEXT DEFAULT '[]';
+-- Migration history (already applied to remote DB):
+-- ALTER TABLE keywords RENAME TO styles;
+-- ALTER TABLE trends DROP COLUMN keywords;
+-- ALTER TABLE designers ADD COLUMN related_tags TEXT NOT NULL DEFAULT '[]';
+-- ALTER TABLE styles ADD COLUMN related_tags TEXT NOT NULL DEFAULT '[]';
+-- ALTER TABLE trends ADD COLUMN related_tags TEXT NOT NULL DEFAULT '[]';

@@ -1,6 +1,6 @@
-DELETE FROM keywords;
+DELETE FROM styles;
 
-INSERT INTO keywords (name, slug) VALUES
+INSERT INTO styles (name, slug) VALUES
   ('Minimalist', 'minimalist'),
   ('Maximalist', 'maximalist'),
   ('Avant-garde', 'avant-garde'),
