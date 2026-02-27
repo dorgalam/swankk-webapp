@@ -1,5 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 export default function QuickFacts({ designer }: { designer: any }) {
   if (!designer) return null;
@@ -37,12 +39,13 @@ export default function QuickFacts({ designer }: { designer: any }) {
           <span className="text-[10px] text-gray-400 tracking-wide">Known for</span>
           <div className="flex flex-wrap gap-1.5 mt-2">
             {designer.known_for_tags.map((tag: any, i: number) => (
-              <span
+              <Link
                 key={i}
-                className="px-2 py-1 bg-gray-50 border border-gray-100 rounded-full text-[10px] text-gray-700 tracking-wide"
+                to={createPageUrl(`TagDiscovery?tag=${encodeURIComponent(tag.name || tag)}`)}
+                className="px-2 py-1 bg-gray-50 border border-gray-100 rounded-full text-[10px] text-gray-700 tracking-wide hover:border-gray-400 transition-colors"
               >
                 {tag.name || tag}
-              </span>
+              </Link>
             ))}
           </div>
         </div>

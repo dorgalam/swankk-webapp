@@ -101,7 +101,7 @@ export default function TagDiscovery() {
           {tagName}
         </motion.h1>
         <p className="text-gray-400 text-sm leading-relaxed max-w-2xl">
-          Explore designers, eras, and pieces that embody this aesthetic
+          {currentStyle?.description || "Explore designers, eras, and pieces that embody this aesthetic"}
         </p>
       </div>
 

@@ -60,7 +60,8 @@ export default function TrendDetail() {
     );
   }
 
-  const images = shuffle(trend.images || []);
+  const originalImages: any[] = trend.images || [];
+  const images = shuffle(originalImages);
 
   return (
     <div className="pb-20">
@@ -94,7 +95,11 @@ export default function TrendDetail() {
 
       <div className="px-5 md:px-8">
         <div className="grid grid-cols-2 gap-3 mb-12">
-          {images.map((img: any, index: number) => (
+          {images.map((img: any, index: number) => {
+            const realIndex = originalImages.findIndex(
+              (o: any) => o.image_url === img.image_url
+            );
+            return (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 20 }}
@@ -103,7 +108,7 @@ export default function TrendDetail() {
               className="group cursor-pointer"
               onClick={() =>
                 navigate(
-                  createPageUrl(`TrendImageDetail?trendSlug=${slug}&imageIndex=${index}`)
+                  createPageUrl(`TrendImageDetail?trendSlug=${slug}&imageIndex=${realIndex}`)
                 )
               }
             >
@@ -112,11 +117,82 @@ export default function TrendDetail() {
                   src={img.image_url}
                   alt={`${trend.name} ${index + 1}`}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                 />
               </div>
             </motion.div>
-          ))}
+            );
+          })}
         </div>
+
+        {/* Style keywords */}
+        {(trend.related_tags || []).some((t: string) => t.startsWith('style:')) && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="mb-10"
+          >
+            <h2 className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium mb-3">
+              Keywords
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {(trend.related_tags as string[])
+                .filter((t: string) => t.startsWith('style:'))
+                .map((entry: string) => {
+                  const styleSlug = entry.slice('style:'.length);
+                  const style = (allStyles as any[]).find((s: any) => s.slug === styleSlug);
+                  if (!style) return null;
+                  return (
+                    <Link
+                      key={entry}
+                      to={createPageUrl(`TagDiscovery?slug=${styleSlug}`)}
+                      className="px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-full text-sm text-gray-700 hover:border-gray-400 transition-colors"
+                    >
+                      {style.name}
+                    </Link>
+                  );
+                })}
+            </div>
+          </motion.section>
+        )}
+
+        {/* Products */}
+        {(trend.products || []).length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mb-10"
+          >
+            <h2 className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium mb-4">
+              Shop the Look
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {(trend.products as any[]).map((product: any, i: number) => (
+                <a
+                  key={i}
+                  href={product.url || product.farfetch_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group"
+                >
+                  <div className="aspect-square rounded-xl overflow-hidden mb-2 bg-gray-50">
+                    <img
+                      src={product.image_url}
+                      alt={product.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                    />
+                  </div>
+                  <p className="text-sm text-black font-medium line-clamp-2">{product.name}</p>
+                  {product.brand && <p className="text-xs text-gray-400 mt-0.5">{product.brand}</p>}
+                  {product.price && <p className="text-xs text-gray-500 mt-0.5">{product.price}</p>}
+                </a>
+              ))}
+            </div>
+          </motion.section>
+        )}
 
         <RelatedTags
           relatedTags={trend.related_tags || []}

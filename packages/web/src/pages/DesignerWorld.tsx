@@ -86,7 +86,7 @@ export default function DesignerWorld() {
 
   return (
     <div className="pb-20">
-      <div className="relative h-40 md:h-56 overflow-hidden">
+      <div className="relative h-64 md:h-80 overflow-hidden">
         <img
           src={designer.hero_image_url}
           alt={designer.name}

@@ -1,6 +1,6 @@
 import type { Env } from '../../../../../types/env';
 
-const JSON_FIELDS = ['designer_slugs', 'preview_images', 'images', 'related_tags'];
+const JSON_FIELDS = ['designer_slugs', 'preview_images', 'images', 'products', 'related_tags'];
 
 function parseRow(row: Record<string, unknown> | null): Record<string, unknown> | null {
   if (!row) return row;
