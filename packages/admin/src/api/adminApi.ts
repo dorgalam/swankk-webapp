@@ -157,6 +157,65 @@ export const STYLES_LIST = [
   'Youthful', 'Retro', 'Luxury', 'Accessible', 'Performance',
 ]
 
+// ── Bidirectional related-tag helpers ────────────────────────────────────────
+
+/** Add `inverseTag` to the `related_tags` of the entity identified by `targetTag` (e.g. "designer:gucci"). */
+async function addTagToEntity(targetTag: string, inverseTag: string): Promise<void> {
+  const colonIdx = targetTag.indexOf(':')
+  if (colonIdx === -1) return
+  const type = targetTag.slice(0, colonIdx)
+  const slug = targetTag.slice(colonIdx + 1)
+  if (type !== 'designer' && type !== 'style' && type !== 'trend') return
+  const table = type === 'designer' ? 'designers' : type === 'style' ? 'styles' : 'trends'
+  const { results } = await query(`SELECT related_tags FROM ${table} WHERE slug = ?`, [slug])
+  if (!results[0]) return
+  const current: string[] = JSON.parse((results[0].related_tags as string) || '[]')
+  if (current.includes(inverseTag)) return
+  await query(
+    `UPDATE ${table} SET related_tags = ?, updated_at = datetime('now') WHERE slug = ?`,
+    [JSON.stringify([...current, inverseTag]), slug],
+  )
+}
+
+/** Remove `inverseTag` from the `related_tags` of the entity identified by `targetTag`. */
+async function removeTagFromEntity(targetTag: string, inverseTag: string): Promise<void> {
+  const colonIdx = targetTag.indexOf(':')
+  if (colonIdx === -1) return
+  const type = targetTag.slice(0, colonIdx)
+  const slug = targetTag.slice(colonIdx + 1)
+  if (type !== 'designer' && type !== 'style' && type !== 'trend') return
+  const table = type === 'designer' ? 'designers' : type === 'style' ? 'styles' : 'trends'
+  const { results } = await query(`SELECT related_tags FROM ${table} WHERE slug = ?`, [slug])
+  if (!results[0]) return
+  const current: string[] = JSON.parse((results[0].related_tags as string) || '[]')
+  if (!current.includes(inverseTag)) return
+  await query(
+    `UPDATE ${table} SET related_tags = ?, updated_at = datetime('now') WHERE slug = ?`,
+    [JSON.stringify(current.filter((t) => t !== inverseTag)), slug],
+  )
+}
+
+/**
+ * Diff oldTags → newTags and mirror every change on the target entities.
+ * sourceType + sourceSlug identify the entity being saved (e.g. 'designer', 'acne-studios').
+ */
+async function syncBidirectionalTags(
+  sourceType: 'designer' | 'style' | 'trend',
+  sourceSlug: string,
+  oldTags: string[],
+  newTags: string[],
+): Promise<void> {
+  const inverseTag = `${sourceType}:${sourceSlug}`
+  const added = newTags.filter((t) => !oldTags.includes(t))
+  const removed = oldTags.filter((t) => !newTags.includes(t))
+  await Promise.all([
+    ...added.map((t) => addTagToEntity(t, inverseTag)),
+    ...removed.map((t) => removeTagFromEntity(t, inverseTag)),
+  ])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 async function query(sql: string, params: unknown[] = []): Promise<QueryResult> {
   const res = await fetch('/api/admin/query', {
     method: 'POST',
@@ -250,9 +309,23 @@ const adminApi = {
           JSON.stringify(data.related_tags || []),
         ],
       )
+      if (data.related_tags?.length) {
+        await syncBidirectionalTags('designer', slug, [], data.related_tags)
+      }
       return meta
     },
     async update(id: string | number, data: DesignerInput) {
+      // Sync bidirectional tags before saving
+      if (data.related_tags !== undefined) {
+        const { results } = await query('SELECT slug, related_tags FROM designers WHERE id = ?', [id])
+        const row = results[0]
+        if (row) {
+          const slug = row.slug as string
+          const oldTags: string[] = JSON.parse((row.related_tags as string) || '[]')
+          await syncBidirectionalTags('designer', slug, oldTags, data.related_tags)
+        }
+      }
+
       const sets: string[] = []
       const params: unknown[] = []
       const fields = [
@@ -320,6 +393,13 @@ const adminApi = {
       return meta
     },
     async updateRelatedTags(id: number, related_tags: string[]) {
+      const { results } = await query('SELECT slug, related_tags FROM styles WHERE id = ?', [id])
+      const row = results[0]
+      if (row) {
+        const slug = row.slug as string
+        const oldTags: string[] = JSON.parse((row.related_tags as string) || '[]')
+        await syncBidirectionalTags('style', slug, oldTags, related_tags)
+      }
       const { meta } = await query(
         "UPDATE styles SET related_tags = ?, updated_at = datetime('now') WHERE id = ?",
         [JSON.stringify(related_tags), id],
@@ -365,9 +445,23 @@ const adminApi = {
           JSON.stringify(data.related_tags || []),
         ],
       )
+      if (data.related_tags?.length) {
+        await syncBidirectionalTags('trend', slug, [], data.related_tags)
+      }
       return meta
     },
     async update(id: string | number, data: TrendInput) {
+      // Sync bidirectional tags before saving
+      if (data.related_tags !== undefined) {
+        const { results } = await query('SELECT slug, related_tags FROM trends WHERE id = ?', [id])
+        const row = results[0]
+        if (row) {
+          const slug = row.slug as string
+          const oldTags: string[] = JSON.parse((row.related_tags as string) || '[]')
+          await syncBidirectionalTags('trend', slug, oldTags, data.related_tags)
+        }
+      }
+
       const images = data.images || []
       const preview_images = images.slice(0, 3)
       const { meta } = await query(

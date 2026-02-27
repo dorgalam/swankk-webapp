@@ -191,7 +191,9 @@ export default function Styles() {
   const handleSave = async (id: number, description: string, relatedTags: string[]) => {
     await adminApi.styles.updateDescription(id, description)
     await adminApi.styles.updateRelatedTags(id, relatedTags)
+    queryClient.invalidateQueries({ queryKey: ['admin-designers'] })
     queryClient.invalidateQueries({ queryKey: ['admin-styles'] })
+    queryClient.invalidateQueries({ queryKey: ['admin-trends'] })
   }
 
   const totalDesigners = mergedStyles.reduce((sum, s) => sum + (s.designer_count ?? 0), 0)

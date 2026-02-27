@@ -114,6 +114,8 @@ export default function TrendForm() {
       } else {
         await adminApi.trends.create(form)
       }
+      queryClient.invalidateQueries({ queryKey: ['admin-designers'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-styles'] })
       queryClient.invalidateQueries({ queryKey: ['admin-trends'] })
       navigate('/trends')
     } finally {

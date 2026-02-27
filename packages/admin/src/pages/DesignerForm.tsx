@@ -228,6 +228,8 @@ export default function DesignerForm() {
         }
       }
       queryClient.invalidateQueries({ queryKey: ['admin-designers'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-styles'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-trends'] })
       queryClient.invalidateQueries({ queryKey: ['admin-requests'] })
       navigate('/designers')
     } finally {
