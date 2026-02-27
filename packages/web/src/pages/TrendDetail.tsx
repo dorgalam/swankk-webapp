@@ -4,8 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { createPageUrl, shuffle } from "@/utils";
-import RelatedTags from "@/components/swankk/RelatedTags";
+import { createPageUrl, shuffle, cdnUrl } from "@/utils";
 
 export default function TrendDetail() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -19,11 +18,6 @@ export default function TrendDetail() {
   const { data: trends = [], isLoading } = useQuery({
     queryKey: ["trend", slug],
     queryFn: () => api.trends.filter({ slug }),
-  });
-
-  const { data: allDesigners = [] } = useQuery({
-    queryKey: ["designers"],
-    queryFn: () => api.designers.list(),
   });
 
   const { data: allStyles = [] } = useQuery({
@@ -172,7 +166,7 @@ export default function TrendDetail() {
               {(trend.products as any[]).map((product: any, i: number) => (
                 <a
                   key={i}
-                  href={product.url || product.farfetch_url}
+                  href={product.link || product.url || product.farfetch_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group"
@@ -194,12 +188,44 @@ export default function TrendDetail() {
           </motion.section>
         )}
 
-        <RelatedTags
-          relatedTags={trend.related_tags || []}
-          allDesigners={allDesigners as any[]}
-          allStyles={allStyles as any[]}
-          allTrends={allTrends as any[]}
-        />
+        {/* Explore More — 4 other trends */}
+        {(() => {
+          const others = shuffle(
+            (allTrends as any[]).filter((t: any) => t.slug !== slug)
+          ).slice(0, 4);
+          if (!others.length) return null;
+          return (
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="mb-10"
+            >
+              <h2 className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium mb-4">
+                Explore More
+              </h2>
+              <div className="grid grid-cols-2 gap-3">
+                {others.map((t: any) => (
+                  <Link
+                    key={t.slug}
+                    to={createPageUrl(`TrendDetail?slug=${t.slug}`)}
+                    className="group"
+                  >
+                    <div className="aspect-[3/4] rounded-xl overflow-hidden mb-2">
+                      <img
+                        src={cdnUrl((t.preview_images || [])[0])}
+                        alt={t.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                      />
+                    </div>
+                    <p className="text-sm font-medium text-black">{t.name}</p>
+                  </Link>
+                ))}
+              </div>
+            </motion.section>
+          );
+        })()}
       </div>
     </div>
   );

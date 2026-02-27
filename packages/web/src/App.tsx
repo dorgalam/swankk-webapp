@@ -10,6 +10,11 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 function ScrollToTop() {
   const { pathname, search } = useLocation();
   React.useEffect(() => {
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+  }, []);
+  React.useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname, search]);
   return null;

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { api } from "@/api/client";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Info, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl, cdnUrl } from "@/utils";
 import SaveButton from "@/components/swankk/SaveButton";
@@ -18,11 +18,13 @@ export default function ImageDetail() {
 
   const [currentIdx, setCurrentIdx] = useState(imageIndex);
   const [direction, setDirection] = useState(0);
+  const [showInfo, setShowInfo] = useState(false);
   const thumbsRef = useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     window.scrollTo(0, 0);
     setCurrentIdx(imageIndex);
+    setShowInfo(false);
   }, [slug, eraIndex, imageIndex]);
 
   const { data: designers = [], isLoading } = useQuery({
@@ -143,10 +145,10 @@ export default function ImageDetail() {
             <button
               key={i}
               onClick={() => goTo(i)}
-              className={`flex-shrink-0 w-14 h-20 rounded-lg overflow-hidden transition-all duration-200 ${
+              className={`flex-shrink-0 w-10 h-14 rounded-md overflow-hidden transition-all duration-200 ${
                 i === currentIdx
-                  ? "ring-2 ring-black ring-offset-1 opacity-100"
-                  : "opacity-40 hover:opacity-70"
+                  ? "ring-1 ring-gray-400 ring-offset-1 opacity-100"
+                  : "opacity-35 hover:opacity-65"
               }`}
             >
               <img
@@ -162,10 +164,29 @@ export default function ImageDetail() {
       {/* Details */}
       <div className="px-5 md:px-8 max-w-2xl mx-auto">
         <div className="flex items-start justify-between mb-4">
-          <div>
-            <h2 className="font-serif text-xl md:text-2xl font-medium text-black mb-1">
-              {era.title}
-            </h2>
+          <div className="flex-1 min-w-0 mr-3">
+            <div className="flex items-center gap-1.5 mb-1">
+              <h2 className="font-serif text-xl md:text-2xl font-medium text-black">
+                {era.title}
+              </h2>
+              {era.description && (
+                <button
+                  onClick={() => setShowInfo((v) => !v)}
+                  className="flex-shrink-0 p-0.5 rounded-full hover:bg-gray-100 transition-colors"
+                >
+                  <Info className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.5} />
+                </button>
+              )}
+            </div>
+            {showInfo && era.description && (
+              <motion.p
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-xs text-gray-500 bg-gray-50 rounded-xl p-3 mb-2 leading-relaxed"
+              >
+                {era.description}
+              </motion.p>
+            )}
             <p className="text-sm text-gray-500">{era.year_range}</p>
           </div>
           <SaveButton

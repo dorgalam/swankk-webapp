@@ -43,8 +43,9 @@ export default function TagDiscovery() {
 
   const allEras = shuffle(
     matchingDesigners.flatMap((designer: any) =>
-      (designer.eras || []).map((era: any) => ({
+      (designer.eras || []).map((era: any, eraIdx: number) => ({
         ...era,
+        eraIndex: eraIdx,
         designer_name: designer.name,
         designer_slug: designer.slug,
         designer_id: designer.id,
@@ -145,53 +146,36 @@ export default function TagDiscovery() {
             transition={{ delay: 0.2 }}
           >
             <h2 className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium mb-4">
-              Defining Moments
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {allEras.slice(0, 6).map((era: any, i: number) => (
-                <Link
-                  key={i}
-                  to={createPageUrl(`DesignerWorld?slug=${era.designer_slug}`)}
-                  className="group"
-                >
-                  <div className="relative aspect-[16/9] rounded-xl overflow-hidden mb-2">
-                    <img
-                      src={cdnUrl(era.image_url)}
-                      alt={era.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-4">
-                      <p className="text-white text-sm font-medium">{era.title}</p>
-                      <p className="text-white/60 text-xs mt-0.5">
-                        {era.designer_name} · {era.year_range}
-                      </p>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </motion.section>
-        )}
-
-        {allEras.length > 0 && (
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <h2 className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium mb-4">
               Visual Gallery
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-              {shuffle(allEras.flatMap((era: any) => (era.images || [])))
+              {shuffle(
+                allEras.flatMap((era: any) =>
+                  (era.images || []).map((imgUrl: string, imgIdx: number) => ({
+                    imgUrl,
+                    designerSlug: era.designer_slug,
+                    eraIndex: era.eraIndex,
+                    imageIndex: imgIdx,
+                  }))
+                )
+              )
                 .slice(0, 12)
-                .map((imgUrl: string, i: number) => (
-                  <div key={i} className="aspect-[3/4] rounded-lg overflow-hidden">
+                .map((item: any, i: number) => (
+                  <div
+                    key={i}
+                    className="aspect-[3/4] rounded-lg overflow-hidden cursor-pointer group"
+                    onClick={() =>
+                      navigate(
+                        createPageUrl(
+                          `ImageDetail?slug=${item.designerSlug}&era=${item.eraIndex}&image=${item.imageIndex}`
+                        )
+                      )
+                    }
+                  >
                     <img
-                      src={cdnUrl(imgUrl)}
+                      src={cdnUrl(item.imgUrl)}
                       alt=""
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   </div>
                 ))}
@@ -212,7 +196,7 @@ export default function TagDiscovery() {
               {allSignaturePieces.slice(0, 6).map((piece: any, i: number) => (
                 <a
                   key={i}
-                  href={piece.farfetch_url}
+                  href={piece.link || piece.farfetch_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group"
