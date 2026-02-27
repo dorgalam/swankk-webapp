@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Volume2, ArrowLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl, cdnUrl } from "@/utils";
 import QuickFacts from "@/components/swankk/QuickFacts";
 import ErasCarousel from "@/components/swankk/ErasCarousel";
 import SignaturePieces from "@/components/swankk/SignaturePieces";
@@ -88,7 +88,7 @@ export default function DesignerWorld() {
     <div className="pb-20">
       <div className="relative h-64 md:h-80 overflow-hidden">
         <img
-          src={designer.hero_image_url}
+          src={cdnUrl(designer.hero_image_url)}
           alt={designer.name}
           className="w-full h-full object-cover"
         />

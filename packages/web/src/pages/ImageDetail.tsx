@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl, cdnUrl } from "@/utils";
 import SaveButton from "@/components/swankk/SaveButton";
 
 const SWIPE_THRESHOLD = 50;
@@ -101,7 +101,7 @@ export default function ImageDetail() {
           <AnimatePresence initial={false} custom={direction} mode="popLayout">
             <motion.img
               key={currentIdx}
-              src={currentImageUrl}
+              src={cdnUrl(currentImageUrl)}
               alt={`${era.title} ${currentIdx + 1}`}
               custom={direction}
               variants={{
@@ -150,7 +150,7 @@ export default function ImageDetail() {
               }`}
             >
               <img
-                src={url}
+                src={cdnUrl(url)}
                 alt={`${era.title} ${i + 1}`}
                 className="w-full h-full object-cover"
               />
@@ -217,7 +217,7 @@ export default function ImageDetail() {
                 }}
               >
                 <img
-                  src={img.image_url}
+                  src={cdnUrl(img.image_url)}
                   alt={img.eraTitle}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />

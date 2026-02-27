@@ -114,7 +114,7 @@ export default function TrendDetail() {
             >
               <div className="aspect-[3/4] rounded-xl overflow-hidden">
                 <img
-                  src={img.image_url}
+                  src={cdnUrl(img.image_url)}
                   alt={`${trend.name} ${index + 1}`}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
@@ -179,7 +179,7 @@ export default function TrendDetail() {
                 >
                   <div className="aspect-square rounded-xl overflow-hidden mb-2 bg-gray-50">
                     <img
-                      src={product.image_url}
+                      src={cdnUrl(product.image_url)}
                       alt={product.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}

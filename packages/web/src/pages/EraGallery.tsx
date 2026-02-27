@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl, cdnUrl } from "@/utils";
 
 export default function EraGallery() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -111,7 +111,7 @@ export default function EraGallery() {
             >
               <div className="aspect-[3/4] rounded-xl overflow-hidden">
                 <img
-                  src={imgUrl}
+                  src={cdnUrl(imgUrl)}
                   alt={`${era.title} ${index + 1}`}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
@@ -137,7 +137,7 @@ export default function EraGallery() {
                 onClick={() => handleMoreImageClick(img)}
               >
                 <img
-                  src={img.image_url}
+                  src={cdnUrl(img.image_url)}
                   alt={img.eraTitle}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />

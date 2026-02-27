@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { createPageUrl, shuffle } from "@/utils";
+import { createPageUrl, shuffle, cdnUrl } from "@/utils";
 import RelatedTags from "@/components/swankk/RelatedTags";
 
 export default function TagDiscovery() {
@@ -124,7 +124,7 @@ export default function TagDiscovery() {
                 >
                   <div className="relative aspect-[3/4] rounded-xl overflow-hidden mb-2">
                     <img
-                      src={designer.hero_image_url}
+                      src={cdnUrl(designer.hero_image_url)}
                       alt={designer.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                     />
@@ -156,7 +156,7 @@ export default function TagDiscovery() {
                 >
                   <div className="relative aspect-[16/9] rounded-xl overflow-hidden mb-2">
                     <img
-                      src={era.image_url}
+                      src={cdnUrl(era.image_url)}
                       alt={era.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                     />
@@ -189,7 +189,7 @@ export default function TagDiscovery() {
                 .map((imgUrl: string, i: number) => (
                   <div key={i} className="aspect-[3/4] rounded-lg overflow-hidden">
                     <img
-                      src={imgUrl}
+                      src={cdnUrl(imgUrl)}
                       alt=""
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                     />
@@ -219,7 +219,7 @@ export default function TagDiscovery() {
                 >
                   <div className="relative aspect-square rounded-xl overflow-hidden mb-2 bg-gray-50">
                     <img
-                      src={piece.image_url}
+                      src={cdnUrl(piece.image_url)}
                       alt={piece.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                     />

@@ -3,7 +3,7 @@ import { api } from "@/api/client";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl, cdnUrl } from "@/utils";
 
 export default function SharedCollection() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -71,7 +71,7 @@ export default function SharedCollection() {
                 <div className="aspect-square rounded-xl overflow-hidden bg-gray-50">
                   {item.image_url ? (
                     <img
-                      src={item.image_url}
+                      src={cdnUrl(item.image_url)}
                       alt={item.title}
                       className="w-full h-full object-cover"
                     />

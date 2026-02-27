@@ -3,7 +3,7 @@ import { api } from "@/api/client";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl, cdnUrl } from "@/utils";
 import TasteOnboarding from "@/components/swankk/TasteOnboarding";
 import TasteEditModal from "@/components/swankk/TasteEditModal";
 
@@ -188,7 +188,7 @@ if (!hasSeenLanding) {
                             >
                               <div className="aspect-[3/4] rounded-xl overflow-hidden">
                                 <img
-                                  src={img}
+                                  src={cdnUrl(img)}
                                   alt={`${trend.name} ${i + 1}`}
                                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                 />
@@ -238,7 +238,7 @@ if (!hasSeenLanding) {
                             >
                               <div className="aspect-[3/4] rounded-xl overflow-hidden">
                                 <img
-                                  src={img}
+                                  src={cdnUrl(img)}
                                   alt={`${era.title} ${i + 1}`}
                                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                 />

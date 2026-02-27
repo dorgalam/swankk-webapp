@@ -10,3 +10,14 @@ export function shuffle<T>(arr: T[]): T[] {
   }
   return a;
 }
+
+const R2_PUBLIC_BASE = 'https://pub-3abdbdf94a8c487bbb5eeb5056e7baa7.r2.dev';
+
+/** Converts /api/assets/<key> paths to the direct R2 CDN URL. Pass-through for external URLs. */
+export function cdnUrl(url: string | undefined | null): string {
+  if (!url) return '';
+  if (url.startsWith('/api/assets/')) {
+    return R2_PUBLIC_BASE + '/' + url.slice('/api/assets/'.length);
+  }
+  return url;
+}

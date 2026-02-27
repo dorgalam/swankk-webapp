@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { createPageUrl, shuffle } from "@/utils";
+import { createPageUrl, shuffle, cdnUrl } from "@/utils";
 
 interface RelatedTagsProps {
   relatedTags: string[];
@@ -93,7 +93,7 @@ export default function RelatedTags({
               <div className="relative w-28 group">
                 <div className="aspect-[3/4] rounded-xl overflow-hidden mb-1.5">
                   <img
-                    src={tag.imageUrl}
+                    src={cdnUrl(tag.imageUrl)}
                     alt={tag.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />

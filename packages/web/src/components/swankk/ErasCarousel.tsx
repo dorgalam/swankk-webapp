@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl, cdnUrl } from "@/utils";
 
 export default function ErasCarousel({ designer }: { designer: any }) {
   const navigate = useNavigate();
@@ -50,7 +50,7 @@ export default function ErasCarousel({ designer }: { designer: any }) {
                     }
                   >
                     <img
-                      src={imageUrl}
+                      src={cdnUrl(imageUrl)}
                       alt={`${era.title} ${imgIndex + 1}`}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />

@@ -12,7 +12,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl, cdnUrl } from "@/utils";
 import { useAuth } from "@/lib/AuthContext";
 
 export default function Saved() {
@@ -151,7 +151,7 @@ export default function Saved() {
                   <div className="relative aspect-square rounded-xl overflow-hidden bg-gray-50">
                     {item.image_url ? (
                       <img
-                        src={item.image_url}
+                        src={cdnUrl(item.image_url)}
                         alt={item.title}
                         className="w-full h-full object-cover"
                       />

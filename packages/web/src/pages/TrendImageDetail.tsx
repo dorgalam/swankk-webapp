@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl, cdnUrl } from "@/utils";
 import SaveButton from "@/components/swankk/SaveButton";
 
 export default function TrendImageDetail() {
@@ -74,7 +74,7 @@ export default function TrendImageDetail() {
         >
           <div className="aspect-[3/4] md:aspect-[4/5] rounded-xl overflow-hidden mb-6">
             <img
-              src={currentImage.image_url}
+              src={cdnUrl(currentImage.image_url)}
               alt={trend.name}
               className="w-full h-full object-cover"
             />
@@ -146,7 +146,7 @@ export default function TrendImageDetail() {
                   }
                 >
                   <img
-                    src={img.image_url}
+                    src={cdnUrl(img.image_url)}
                     alt={`${trend.name} ${i + 1}`}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />

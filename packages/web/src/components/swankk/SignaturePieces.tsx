@@ -1,6 +1,7 @@
 import React, { useRef } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { cdnUrl } from "@/utils";
 
 export default function SignaturePieces({ designer }: { designer: any }) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -57,7 +58,7 @@ export default function SignaturePieces({ designer }: { designer: any }) {
           >
             <div className="aspect-square rounded-xl overflow-hidden bg-gray-50 mb-3">
               <img
-                src={piece.image_url}
+                src={cdnUrl(piece.image_url)}
                 alt={piece.name}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
               />
