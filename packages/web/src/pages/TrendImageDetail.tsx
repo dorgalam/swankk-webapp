@@ -94,7 +94,7 @@ export default function TrendImageDetail() {
             <AnimatePresence initial={false} custom={direction} mode="popLayout">
               <motion.img
                 key={currentIdx}
-                src={cdnUrl(currentImage.image_url)}
+                src={cdnUrl(currentImage)}
                 alt={trend.name}
                 custom={direction}
                 variants={{
@@ -140,7 +140,7 @@ export default function TrendImageDetail() {
                   }`}
                 >
                   <img
-                    src={cdnUrl(img.image_url)}
+                    src={cdnUrl(img)}
                     alt={`${trend.name} ${i + 1}`}
                     className="w-full h-full object-cover"
                   />
@@ -178,35 +178,12 @@ export default function TrendImageDetail() {
             <SaveButton
               itemType="era_image"
               title={trend.name}
-              imageUrl={currentImage.image_url}
-              subtitle={currentImage.designer_name}
+              imageUrl={currentImage}
               iconColor="black"
             />
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {currentImage.designer_name && (
-              <Link
-                to={createPageUrl(`DesignerWorld?slug=${currentImage.designer_slug}`)}
-                className="px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-full text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-              >
-                {currentImage.designer_name}
-              </Link>
-            )}
-            {currentImage.season && (
-              <span className="px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-full text-sm text-gray-700">
-                {currentImage.season}
-              </span>
-            )}
-            {[...new Set<string>(currentImage.tags || [])].map((tag, i) => (
-              <Link
-                key={i}
-                to={createPageUrl(`TagDiscovery?tag=${encodeURIComponent(tag)}`)}
-                className="px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-full text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-              >
-                {tag}
-              </Link>
-            ))}
           </div>
         </motion.div>
       </div>

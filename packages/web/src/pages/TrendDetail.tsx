@@ -91,7 +91,7 @@ export default function TrendDetail() {
         <div className="grid grid-cols-2 gap-3 mb-12">
           {images.map((img: any, index: number) => {
             const realIndex = originalImages.findIndex(
-              (o: any) => o.image_url === img.image_url
+              (o: any) => o === img
             );
             return (
             <motion.div
@@ -108,7 +108,7 @@ export default function TrendDetail() {
             >
               <div className="aspect-[3/4] rounded-xl overflow-hidden">
                 <img
-                  src={cdnUrl(img.image_url)}
+                  src={cdnUrl(img)}
                   alt={`${trend.name} ${index + 1}`}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
