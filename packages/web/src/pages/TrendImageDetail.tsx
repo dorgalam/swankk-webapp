@@ -32,7 +32,7 @@ export default function TrendImageDetail() {
   });
 
   const trend = (trends as any[])[0];
-  const images: any[] = trend?.images || [];
+  const images: string[] = trend?.images || [];
 
   useEffect(() => {
     if (!thumbsRef.current || !images.length) return;
@@ -69,6 +69,8 @@ export default function TrendImageDetail() {
       </div>
     );
   }
+
+  const imageBookmarkId = `trend_${trendSlug}_${currentIdx}`;
 
   return (
     <div className="pb-20">
@@ -116,6 +118,21 @@ export default function TrendImageDetail() {
                 className="absolute inset-0 w-full h-full object-cover cursor-grab active:cursor-grabbing select-none"
               />
             </AnimatePresence>
+
+            {/* Save button overlaid on image — top right */}
+            <div className="absolute top-3 right-3 z-10">
+              <SaveButton
+                category="images"
+                id={imageBookmarkId}
+                item={{
+                  imageUrl: currentImage,
+                  title: trend.name,
+                  linkTo: `/TrendImageDetail?trendSlug=${trendSlug}&imageIndex=${currentIdx}`,
+                }}
+                iconColor="white"
+              />
+            </div>
+
             {images.length > 1 && (
               <div className="absolute bottom-3 right-3 bg-black/40 backdrop-blur-sm text-white text-xs px-2.5 py-1 rounded-full pointer-events-none">
                 {currentIdx + 1} / {images.length}
@@ -129,7 +146,7 @@ export default function TrendImageDetail() {
               ref={thumbsRef}
               className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-5"
             >
-              {images.map((img: any, i: number) => (
+              {images.map((img: string, i: number) => (
                 <button
                   key={i}
                   onClick={() => goTo(i)}
@@ -175,15 +192,6 @@ export default function TrendImageDetail() {
                 </motion.p>
               )}
             </div>
-            <SaveButton
-              itemType="era_image"
-              title={trend.name}
-              imageUrl={currentImage}
-              iconColor="black"
-            />
-          </div>
-
-          <div className="flex flex-wrap gap-2">
           </div>
         </motion.div>
       </div>

@@ -2,6 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl, cdnUrl } from "@/utils";
+import ImageWithSkeleton from "./ImageWithSkeleton";
 
 export default function ErasCarousel({ designer }: { designer: any }) {
   const navigate = useNavigate();
@@ -44,12 +45,12 @@ export default function ErasCarousel({ designer }: { designer: any }) {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: imgIndex * 0.05 }}
-                    className="flex-shrink-0 w-40 h-56 md:w-48 md:h-64 rounded-xl overflow-hidden cursor-pointer group"
+                    className="flex-shrink-0 w-40 h-56 md:w-48 md:h-64 rounded-xl overflow-hidden cursor-pointer group relative"
                     onClick={() =>
                       navigate(createPageUrl(`EraGallery?slug=${designer.slug}&era=${eraIndex}`))
                     }
                   >
-                    <img
+                    <ImageWithSkeleton
                       src={cdnUrl(imageUrl)}
                       alt={`${era.title} ${imgIndex + 1}`}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

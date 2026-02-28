@@ -6,6 +6,7 @@ import { ArrowLeft, Info, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl, cdnUrl } from "@/utils";
 import SaveButton from "@/components/swankk/SaveButton";
+import ImageWithSkeleton from "@/components/swankk/ImageWithSkeleton";
 
 const SWIPE_THRESHOLD = 50;
 
@@ -81,6 +82,7 @@ export default function ImageDetail() {
   }
 
   const currentImageUrl = eraImages[currentIdx];
+  const imageBookmarkId = `era_${slug}_${eraIndex}_${currentIdx}`;
 
   return (
     <div className="min-h-screen pb-20">
@@ -101,10 +103,8 @@ export default function ImageDetail() {
       <div className="relative max-w-2xl mx-auto px-5 md:px-8 mb-3">
         <div className="aspect-[3/4] md:aspect-[4/5] rounded-xl overflow-hidden relative">
           <AnimatePresence initial={false} custom={direction} mode="popLayout">
-            <motion.img
+            <motion.div
               key={currentIdx}
-              src={cdnUrl(currentImageUrl)}
-              alt={`${era.title} ${currentIdx + 1}`}
               custom={direction}
               variants={{
                 enter: (dir: number) => ({ x: dir >= 0 ? "100%" : "-100%" }),
@@ -122,17 +122,39 @@ export default function ImageDetail() {
                 if (info.offset.x < -SWIPE_THRESHOLD) goTo(currentIdx + 1);
                 else if (info.offset.x > SWIPE_THRESHOLD) goTo(currentIdx - 1);
               }}
-              className="absolute inset-0 w-full h-full object-cover cursor-grab active:cursor-grabbing select-none"
-            />
+              className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing select-none"
+            >
+              <img
+                src={cdnUrl(currentImageUrl)}
+                alt={`${era.title} ${currentIdx + 1}`}
+                className="w-full h-full object-cover"
+                draggable={false}
+              />
+            </motion.div>
           </AnimatePresence>
-        </div>
 
-        {/* Counter */}
-        {eraImages.length > 1 && (
-          <div className="absolute bottom-3 right-10 md:right-12 bg-black/40 backdrop-blur-sm text-white text-xs px-2.5 py-1 rounded-full pointer-events-none">
-            {currentIdx + 1} / {eraImages.length}
+          {/* Save button overlaid on image — top right */}
+          <div className="absolute top-3 right-3 z-10">
+            <SaveButton
+              category="images"
+              id={imageBookmarkId}
+              item={{
+                imageUrl: currentImageUrl,
+                title: era.title,
+                subtitle: `${designer.name} · ${era.year_range}`,
+                linkTo: `/ImageDetail?slug=${slug}&era=${eraIndex}&image=${currentIdx}`,
+              }}
+              iconColor="white"
+            />
           </div>
-        )}
+
+          {/* Counter */}
+          {eraImages.length > 1 && (
+            <div className="absolute bottom-3 right-3 bg-black/40 backdrop-blur-sm text-white text-xs px-2.5 py-1 rounded-full pointer-events-none">
+              {currentIdx + 1} / {eraImages.length}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Thumbnail strip */}
@@ -189,14 +211,6 @@ export default function ImageDetail() {
             )}
             <p className="text-sm text-gray-500">{era.year_range}</p>
           </div>
-          <SaveButton
-            itemType="era_image"
-            designerId={designer.id}
-            title={era.title}
-            imageUrl={currentImageUrl}
-            subtitle={`${designer.name} · ${era.year_range}`}
-            iconColor="black"
-          />
         </div>
 
         <div className="flex flex-wrap gap-2 mb-8">
@@ -231,13 +245,13 @@ export default function ImageDetail() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.03 }}
-                className="aspect-[3/4] rounded-xl overflow-hidden cursor-pointer group"
+                className="aspect-[3/4] rounded-xl overflow-hidden cursor-pointer group relative"
                 onClick={() => {
                   navigate(createPageUrl(`ImageDetail?slug=${slug}&era=${img.eraIndex}&image=${img.imageIndex}`));
                   window.scrollTo(0, 0);
                 }}
               >
-                <img
+                <ImageWithSkeleton
                   src={cdnUrl(img.image_url)}
                   alt={img.eraTitle}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

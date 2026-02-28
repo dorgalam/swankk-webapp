@@ -10,6 +10,7 @@ import ErasCarousel from "@/components/swankk/ErasCarousel";
 import SignaturePieces from "@/components/swankk/SignaturePieces";
 import SaveButton from "@/components/swankk/SaveButton";
 import RelatedTags from "@/components/swankk/RelatedTags";
+import ImageWithSkeleton from "@/components/swankk/ImageWithSkeleton";
 
 export default function DesignerWorld() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -87,7 +88,7 @@ export default function DesignerWorld() {
   return (
     <div className="pb-20">
       <div className="relative h-64 md:h-80 overflow-hidden">
-        <img
+        <ImageWithSkeleton
           src={cdnUrl(designer.hero_image_url)}
           alt={designer.name}
           className="w-full h-full object-cover"
@@ -117,11 +118,14 @@ export default function DesignerWorld() {
             {designer.name}
           </motion.h1>
           <SaveButton
-            itemType="designer"
-            designerId={designer.id}
-            title={designer.name}
-            imageUrl={designer.hero_image_url}
-            subtitle={designer.phonetic}
+            category="designers"
+            id={designer.slug}
+            item={{
+              imageUrl: designer.hero_image_url,
+              name: designer.name,
+              phonetic: designer.phonetic,
+              slug: designer.slug,
+            }}
             iconColor="black"
           />
         </div>

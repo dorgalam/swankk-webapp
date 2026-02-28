@@ -1,85 +1,51 @@
 import React, { useState } from "react";
 import { Bookmark } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/lib/AuthContext";
-import SaveToCollectionModal from "./SaveToCollectionModal";
+import { bookmarks, type BookmarkCategory } from "@/lib/bookmarks";
 
 interface SaveButtonProps {
-  itemType: string;
-  designerId?: number | string;
-  title: string;
-  imageUrl?: string;
-  subtitle?: string;
-  externalUrl?: string;
+  category: BookmarkCategory;
+  id: string;
+  item: Record<string, any>;
   iconColor?: "black" | "white" | "gray";
+  className?: string;
 }
 
 export default function SaveButton({
-  itemType,
-  designerId,
-  title,
-  imageUrl,
-  subtitle,
-  externalUrl,
+  category,
+  id,
+  item,
   iconColor = "gray",
+  className = "",
 }: SaveButtonProps) {
-  const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
-  const [showModal, setShowModal] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
+  const [isSaved, setIsSaved] = useState(() => bookmarks.has(category, id));
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isAuthenticated) {
-      navigate("/Login");
-      return;
-    }
-    setShowModal(true);
-  };
-
-  const handleSaved = () => {
-    setIsSaved(true);
-    setShowModal(false);
+    const nowSaved = bookmarks.toggle(category, { id, ...item });
+    setIsSaved(nowSaved);
   };
 
   const colorClass =
     iconColor === "white"
       ? isSaved
         ? "text-white bg-white/30"
-        : "text-white/80 bg-black/20 hover:bg-black/40"
+        : "text-white/70 bg-black/25 hover:bg-black/45"
       : isSaved
       ? "text-black bg-gray-100"
       : "text-gray-400 bg-white/80 hover:bg-gray-100";
 
   return (
-    <>
-      <button
-        onClick={handleClick}
-        className={`p-2 rounded-full backdrop-blur-sm transition-all ${colorClass}`}
-        aria-label="Save"
-      >
-        <Bookmark
-          className="w-4 h-4"
-          strokeWidth={1.5}
-          fill={isSaved ? "currentColor" : "none"}
-        />
-      </button>
-
-      {showModal && (
-        <SaveToCollectionModal
-          onClose={() => setShowModal(false)}
-          onSaved={handleSaved}
-          itemData={{
-            item_type: itemType,
-            designer_id: designerId,
-            title,
-            image_url: imageUrl,
-            subtitle,
-            external_url: externalUrl,
-          }}
-        />
-      )}
-    </>
+    <button
+      onClick={handleClick}
+      className={`p-2 rounded-full backdrop-blur-sm transition-all ${colorClass} ${className}`}
+      aria-label={isSaved ? "Remove bookmark" : "Save"}
+    >
+      <Bookmark
+        className="w-4 h-4"
+        strokeWidth={1.5}
+        fill={isSaved ? "currentColor" : "none"}
+      />
+    </button>
   );
 }

@@ -6,6 +6,9 @@ import { ArrowLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl, shuffle, cdnUrl } from "@/utils";
 import RelatedTags from "@/components/swankk/RelatedTags";
+import SaveButton from "@/components/swankk/SaveButton";
+import ImageWithSkeleton from "@/components/swankk/ImageWithSkeleton";
+import { productBookmarkId } from "@/lib/bookmarks";
 
 export default function TagDiscovery() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -94,13 +97,27 @@ export default function TagDiscovery() {
           <ArrowLeft className="w-4 h-4 text-gray-700" strokeWidth={1.5} />
         </button>
 
-        <motion.h1
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="font-serif text-4xl md:text-5xl text-black font-medium mb-3"
-        >
-          {tagName}
-        </motion.h1>
+        <div className="flex items-start justify-between gap-3">
+          <motion.h1
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="font-serif text-4xl md:text-5xl text-black font-medium mb-3"
+          >
+            {tagName}
+          </motion.h1>
+          {currentStyle && (
+            <SaveButton
+              category="keywords"
+              id={`style_${currentStyle.slug}`}
+              item={{
+                name: currentStyle.name,
+                slug: currentStyle.slug,
+                type: "style",
+              }}
+              iconColor="black"
+            />
+          )}
+        </div>
         <p className="text-gray-400 text-sm leading-relaxed max-w-2xl">
           {currentStyle?.description || "Explore designers, eras, and pieces that embody this aesthetic"}
         </p>
@@ -117,14 +134,14 @@ export default function TagDiscovery() {
               Designers
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {matchingDesigners.map((designer: any, i: number) => (
+              {matchingDesigners.map((designer: any) => (
                 <Link
                   key={designer.id}
                   to={createPageUrl(`DesignerWorld?slug=${designer.slug}`)}
                   className="group"
                 >
                   <div className="relative aspect-[3/4] rounded-xl overflow-hidden mb-2">
-                    <img
+                    <ImageWithSkeleton
                       src={cdnUrl(designer.hero_image_url)}
                       alt={designer.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
@@ -163,7 +180,7 @@ export default function TagDiscovery() {
                 .map((item: any, i: number) => (
                   <div
                     key={i}
-                    className="aspect-[3/4] rounded-lg overflow-hidden cursor-pointer group"
+                    className="aspect-[3/4] rounded-lg overflow-hidden cursor-pointer group relative"
                     onClick={() =>
                       navigate(
                         createPageUrl(
@@ -172,7 +189,7 @@ export default function TagDiscovery() {
                       )
                     }
                   >
-                    <img
+                    <ImageWithSkeleton
                       src={cdnUrl(item.imgUrl)}
                       alt=""
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -202,11 +219,24 @@ export default function TagDiscovery() {
                   className="group"
                 >
                   <div className="relative aspect-square rounded-xl overflow-hidden mb-2 bg-gray-50">
-                    <img
+                    <ImageWithSkeleton
                       src={cdnUrl(piece.image_url)}
                       alt={piece.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                     />
+                    <div className="absolute top-2 right-2 z-10">
+                      <SaveButton
+                        category="products"
+                        id={productBookmarkId(piece.name, piece.image_url)}
+                        item={{
+                          imageUrl: piece.image_url,
+                          name: piece.name,
+                          brand: piece.designer_name,
+                          link: piece.link || piece.farfetch_url,
+                        }}
+                        iconColor="white"
+                      />
+                    </div>
                   </div>
                   <p className="text-sm text-black font-medium">{piece.name}</p>
                   <p className="text-xs text-gray-400">{piece.designer_name}</p>

@@ -5,6 +5,9 @@ import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl, shuffle, cdnUrl } from "@/utils";
+import SaveButton from "@/components/swankk/SaveButton";
+import ImageWithSkeleton from "@/components/swankk/ImageWithSkeleton";
+import { productBookmarkId } from "@/lib/bookmarks";
 
 export default function TrendDetail() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -54,7 +57,7 @@ export default function TrendDetail() {
     );
   }
 
-  const originalImages: any[] = trend.images || [];
+  const originalImages: string[] = trend.images || [];
   const images = shuffle(originalImages);
 
   return (
@@ -76,9 +79,22 @@ export default function TrendDetail() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h1 className="font-serif text-3xl md:text-4xl font-medium text-black mb-3">
-            {trend.name}
-          </h1>
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <h1 className="font-serif text-3xl md:text-4xl font-medium text-black">
+              {trend.name}
+            </h1>
+            <SaveButton
+              category="keywords"
+              id={`trend_${slug}`}
+              item={{
+                name: trend.name,
+                slug,
+                type: "trend",
+                imageUrl: originalImages[0] || "",
+              }}
+              iconColor="black"
+            />
+          </div>
           {trend.context && (
             <p className="text-gray-600 text-sm md:text-base leading-relaxed max-w-2xl">
               {trend.context}
@@ -89,32 +105,29 @@ export default function TrendDetail() {
 
       <div className="px-5 md:px-8">
         <div className="grid grid-cols-2 gap-3 mb-12">
-          {images.map((img: any, index: number) => {
-            const realIndex = originalImages.findIndex(
-              (o: any) => o === img
-            );
+          {images.map((img: string, index: number) => {
+            const realIndex = originalImages.findIndex((o: string) => o === img);
             return (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className="group cursor-pointer"
-              onClick={() =>
-                navigate(
-                  createPageUrl(`TrendImageDetail?trendSlug=${slug}&imageIndex=${realIndex}`)
-                )
-              }
-            >
-              <div className="aspect-[3/4] rounded-xl overflow-hidden">
-                <img
-                  src={cdnUrl(img)}
-                  alt={`${trend.name} ${index + 1}`}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                />
-              </div>
-            </motion.div>
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="group cursor-pointer"
+                onClick={() =>
+                  navigate(
+                    createPageUrl(`TrendImageDetail?trendSlug=${slug}&imageIndex=${realIndex}`)
+                  )
+                }
+              >
+                <div className="aspect-[3/4] rounded-xl overflow-hidden relative">
+                  <ImageWithSkeleton
+                    src={cdnUrl(img)}
+                    alt={`${trend.name} ${index + 1}`}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+              </motion.div>
             );
           })}
         </div>
@@ -171,13 +184,26 @@ export default function TrendDetail() {
                   rel="noopener noreferrer"
                   className="group"
                 >
-                  <div className="aspect-square rounded-xl overflow-hidden mb-2 bg-gray-50">
-                    <img
+                  <div className="relative aspect-square rounded-xl overflow-hidden mb-2 bg-gray-50">
+                    <ImageWithSkeleton
                       src={cdnUrl(product.image_url)}
                       alt={product.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                     />
+                    <div className="absolute top-2 right-2 z-10">
+                      <SaveButton
+                        category="products"
+                        id={productBookmarkId(product.name, product.image_url)}
+                        item={{
+                          imageUrl: product.image_url,
+                          name: product.name,
+                          brand: product.brand,
+                          price: product.price,
+                          link: product.link || product.url || product.farfetch_url,
+                        }}
+                        iconColor="white"
+                      />
+                    </div>
                   </div>
                   <p className="text-sm text-black font-medium line-clamp-2">{product.name}</p>
                   {product.brand && <p className="text-xs text-gray-400 mt-0.5">{product.brand}</p>}
@@ -211,12 +237,11 @@ export default function TrendDetail() {
                     to={createPageUrl(`TrendDetail?slug=${t.slug}`)}
                     className="group"
                   >
-                    <div className="aspect-[3/4] rounded-xl overflow-hidden mb-2">
-                      <img
-                        src={cdnUrl((t.preview_images || [])[0])}
+                    <div className="aspect-[3/4] rounded-xl overflow-hidden mb-2 relative">
+                      <ImageWithSkeleton
+                        src={cdnUrl((t.images || [])[0])}
                         alt={t.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                       />
                     </div>
                     <p className="text-sm font-medium text-black">{t.name}</p>

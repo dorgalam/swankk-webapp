@@ -2,6 +2,9 @@ import React, { useRef } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cdnUrl } from "@/utils";
+import ImageWithSkeleton from "./ImageWithSkeleton";
+import SaveButton from "./SaveButton";
+import { productBookmarkId } from "@/lib/bookmarks";
 
 export default function SignaturePieces({ designer }: { designer: any }) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -56,12 +59,25 @@ export default function SignaturePieces({ designer }: { designer: any }) {
             rel="noopener noreferrer"
             className="flex-shrink-0 w-56 group cursor-pointer"
           >
-            <div className="aspect-square rounded-xl overflow-hidden bg-gray-50 mb-3">
-              <img
+            <div className="relative aspect-square rounded-xl overflow-hidden bg-gray-50 mb-3">
+              <ImageWithSkeleton
                 src={cdnUrl(piece.image_url)}
                 alt={piece.name}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
               />
+              <div className="absolute top-2 right-2 z-10">
+                <SaveButton
+                  category="products"
+                  id={productBookmarkId(piece.name, piece.image_url)}
+                  item={{
+                    imageUrl: piece.image_url,
+                    name: piece.name,
+                    brand: designer.name,
+                    link: piece.link || piece.farfetch_url,
+                  }}
+                  iconColor="white"
+                />
+              </div>
             </div>
             <p className="text-sm font-medium text-black leading-tight line-clamp-2">{piece.name}</p>
           </a>

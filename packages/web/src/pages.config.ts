@@ -1,4 +1,7 @@
 import React from 'react';
+import AllDesigners from './pages/AllDesigners';
+import AllStyles from './pages/AllStyles';
+import AllTrends from './pages/AllTrends';
 import ContentEditor from './pages/ContentEditor';
 import DesignerWorld from './pages/DesignerWorld';
 import EraGallery from './pages/EraGallery';
@@ -16,6 +19,9 @@ import __Layout from './Layout';
 
 
 export const PAGES: Record<string, React.ComponentType> = {
+    "AllDesigners": AllDesigners,
+    "AllStyles": AllStyles,
+    "AllTrends": AllTrends,
     "ContentEditor": ContentEditor,
     "DesignerWorld": DesignerWorld,
     "EraGallery": EraGallery,

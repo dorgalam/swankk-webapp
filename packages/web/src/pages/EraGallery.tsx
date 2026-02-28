@@ -5,6 +5,8 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl, cdnUrl } from "@/utils";
+import SaveButton from "@/components/swankk/SaveButton";
+import ImageWithSkeleton from "@/components/swankk/ImageWithSkeleton";
 
 export default function EraGallery() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -84,9 +86,22 @@ export default function EraGallery() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h1 className="font-serif text-3xl md:text-4xl font-medium text-black mb-2">
-            {era.title}
-          </h1>
+          <div className="flex items-start justify-between gap-3 mb-2">
+            <h1 className="font-serif text-3xl md:text-4xl font-medium text-black">
+              {era.title}
+            </h1>
+            <SaveButton
+              category="images"
+              id={`era_${slug}_${eraIndex}_0`}
+              item={{
+                imageUrl: eraImages[0] || "",
+                title: era.title,
+                subtitle: `${designer.name} · ${era.year_range}`,
+                linkTo: `/ImageDetail?slug=${slug}&era=${eraIndex}&image=0`,
+              }}
+              iconColor="black"
+            />
+          </div>
           <p className="text-sm text-gray-400 mb-4">
             {era.year_range} · {designer.name}
           </p>
@@ -109,8 +124,8 @@ export default function EraGallery() {
               className="group cursor-pointer"
               onClick={() => handleImageClick(index)}
             >
-              <div className="aspect-[3/4] rounded-xl overflow-hidden">
-                <img
+              <div className="aspect-[3/4] rounded-xl overflow-hidden relative">
+                <ImageWithSkeleton
                   src={cdnUrl(imgUrl)}
                   alt={`${era.title} ${index + 1}`}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -133,10 +148,10 @@ export default function EraGallery() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.03 }}
-                className="aspect-[3/4] rounded-xl overflow-hidden cursor-pointer group"
+                className="aspect-[3/4] rounded-xl overflow-hidden cursor-pointer group relative"
                 onClick={() => handleMoreImageClick(img)}
               >
-                <img
+                <ImageWithSkeleton
                   src={cdnUrl(img.image_url)}
                   alt={img.eraTitle}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
