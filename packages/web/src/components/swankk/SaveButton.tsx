@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { useBookmarks } from "@/lib/BookmarksContext";
 import type { BookmarkCategory } from "@/lib/bookmarks";
+import { analytics } from "@/lib/analytics";
 
 interface SaveButtonProps {
   category: BookmarkCategory;
@@ -39,6 +40,12 @@ export default function SaveButton({
     if (pending) return;
     setPending(true);
     try {
+      const itemName = item.name || item.title;
+      if (saved) {
+        analytics.bookmark_remove(category, itemName);
+      } else {
+        analytics.bookmark_save(category, itemName);
+      }
       await toggle(category, id, item);
     } finally {
       setPending(false);

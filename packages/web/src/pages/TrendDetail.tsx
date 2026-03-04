@@ -8,6 +8,7 @@ import { createPageUrl, shuffle, cdnUrl } from "@/utils";
 import SaveButton from "@/components/swankk/SaveButton";
 import ImageWithSkeleton from "@/components/swankk/ImageWithSkeleton";
 import { productBookmarkId } from "@/lib/bookmarks";
+import { analytics } from "@/lib/analytics";
 
 export default function TrendDetail() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -17,6 +18,10 @@ export default function TrendDetail() {
   React.useEffect(() => {
     window.scrollTo(0, 0);
   }, [slug]);
+
+  React.useEffect(() => {
+    if (trend) analytics.trend_view(slug, trend.name);
+  }, [slug, trend?.name]);
 
   const { data: trends = [], isLoading } = useQuery({
     queryKey: ["trend", slug],
@@ -154,6 +159,7 @@ export default function TrendDetail() {
                     <Link
                       key={entry}
                       to={createPageUrl(`TagDiscovery?slug=${styleSlug}`)}
+                      onClick={() => analytics.style_tag_click(styleSlug, style.name, `trend:${slug}`)}
                       className="px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-full text-sm text-gray-700 hover:border-gray-400 transition-colors"
                     >
                       {style.name}
@@ -182,6 +188,7 @@ export default function TrendDetail() {
                   href={product.link || product.url || product.farfetch_url}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => analytics.product_click(product.name, 'trend', slug)}
                   className="group"
                 >
                   <div className="relative aspect-square rounded-xl overflow-hidden mb-2 bg-gray-50">

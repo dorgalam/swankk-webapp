@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { analytics } from "@/lib/analytics";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -20,7 +21,8 @@ const NAV_ITEMS = [
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const navigate = useNavigate();
 
-  const handleNav = (page: string) => {
+  const handleNav = (page: string, label: string) => {
+    analytics.nav_click(label);
     onClose();
     navigate(createPageUrl(page));
   };
@@ -68,7 +70,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               {NAV_ITEMS.map(({ label, page }) => (
                 <button
                   key={page}
-                  onClick={() => handleNav(page)}
+                  onClick={() => handleNav(page, label)}
                   className="w-full flex items-center justify-between px-4 py-4 rounded-xl hover:bg-gray-50 transition-colors group text-left"
                 >
                   <span className="font-serif text-xl text-black">{label}</span>

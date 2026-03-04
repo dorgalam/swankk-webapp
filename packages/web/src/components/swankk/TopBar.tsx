@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, Bookmark, Menu, X, ArrowRight, LogOut } from "lucide-react";
 import { createPageUrl } from "@/utils";
@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { useAuth } from "@/lib/AuthContext";
 import Sidebar from "./Sidebar";
+import { analytics } from "@/lib/analytics";
 
 const TYPE_LABELS: Record<string, string> = {
   designer: "Designer",
@@ -54,7 +55,17 @@ export default function TopBar({ currentPageName }: { currentPageName?: string }
             .map((s: any) => ({ type: "style", id: `s_${s.id}`, name: s.name, slug: s.slug })),
         ];
 
-  const handleResultClick = (result: typeof results[number]) => {
+  // Fire search event ~800ms after user stops typing
+  useEffect(() => {
+    if (searchQuery.length < 2) return;
+    const timer = setTimeout(() => {
+      analytics.search_query(searchQuery, results.length);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [searchQuery, results.length]);
+
+  const handleResultClick = (result: typeof results[number], position: number) => {
+    analytics.search_result_click(result.type, result.name, result.slug, position);
     setShowSearch(false);
     setSearchQuery("");
     if (result.type === "designer") {
@@ -78,7 +89,7 @@ export default function TopBar({ currentPageName }: { currentPageName?: string }
 
           <div className="flex items-center gap-0.5 z-10 relative">
             <button
-              onClick={() => setShowSearch(true)}
+              onClick={() => { analytics.search_opened(); setShowSearch(true); }}
               className="p-2.5 rounded-full hover:bg-gray-50 transition-colors active:bg-gray-100"
               aria-label="Search"
             >
@@ -120,7 +131,7 @@ export default function TopBar({ currentPageName }: { currentPageName?: string }
                       >
                         <p className="px-4 py-2 text-xs text-gray-400 truncate border-b border-gray-50">{user.email}</p>
                         <button
-                          onClick={async () => { setShowUserMenu(false); await logout(); navigate("/Login"); }}
+                          onClick={async () => { analytics.auth_logout(); setShowUserMenu(false); await logout(); navigate("/Login"); }}
                           className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                         >
                           <LogOut className="w-3.5 h-3.5" strokeWidth={1.5} />
@@ -181,10 +192,10 @@ export default function TopBar({ currentPageName }: { currentPageName?: string }
                   {searchQuery.length > 0 && (
                     <div className="max-h-96 overflow-y-auto">
                       {results.length > 0 ? (
-                        results.map((result) => (
+                        results.map((result, idx) => (
                           <button
                             key={result.id}
-                            onClick={() => handleResultClick(result)}
+                            onClick={() => handleResultClick(result, idx)}
                             className="w-full flex items-center justify-between px-3 py-3 hover:bg-gray-50 rounded-lg transition-colors text-left"
                           >
                             <div className="flex items-center gap-2.5 min-w-0">

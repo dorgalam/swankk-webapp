@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl, cdnUrl } from "@/utils";
 import ImageWithSkeleton from "@/components/swankk/ImageWithSkeleton";
 import { SlidersHorizontal, X } from "lucide-react";
+import { analytics } from "@/lib/analytics";
 
 interface EraEntry {
   title: string;
@@ -93,7 +94,7 @@ export default function AllEras() {
         <div className="flex items-center gap-2">
           <div className="flex gap-2 overflow-x-auto scrollbar-hide flex-1 pb-0.5">
             <button
-              onClick={() => setFilterDecade(null)}
+              onClick={() => { analytics.era_decade_filter(null); setFilterDecade(null); }}
               className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs border transition-colors ${
                 filterDecade === null
                   ? "bg-black text-white border-black"
@@ -105,7 +106,7 @@ export default function AllEras() {
             {decades.map((decade) => (
               <button
                 key={decade}
-                onClick={() => setFilterDecade(filterDecade === decade ? null : decade)}
+                onClick={() => { const next = filterDecade === decade ? null : decade; analytics.era_decade_filter(next); setFilterDecade(next); }}
                 className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs border transition-colors ${
                   filterDecade === decade
                     ? "bg-black text-white border-black"
@@ -223,6 +224,7 @@ export default function AllEras() {
               <div className="flex-1 overflow-y-auto py-2">
                 <button
                   onClick={() => {
+                    analytics.era_designer_filter(null);
                     setFilterDesigner(null);
                     setShowDesignerPanel(false);
                   }}
@@ -238,6 +240,7 @@ export default function AllEras() {
                   <button
                     key={d.slug}
                     onClick={() => {
+                      analytics.era_designer_filter(d.slug);
                       setFilterDesigner(d.slug);
                       setShowDesignerPanel(false);
                     }}

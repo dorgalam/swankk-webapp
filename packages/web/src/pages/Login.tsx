@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { analytics } from "@/lib/analytics";
 
 export default function Login() {
   const { isAuthenticated } = useAuth();
@@ -23,6 +24,7 @@ export default function Login() {
     e.preventDefault();
     setError("");
     setLoading(true);
+    analytics.auth_submit(mode);
     try {
       const res = await fetch(`/api/auth/${mode}`, {
         method: "POST",
@@ -38,8 +40,10 @@ export default function Login() {
         const data = await res.json().catch(() => ({})) as { error?: string };
         throw new Error(data.error || "Something went wrong");
       }
+      analytics.auth_success(mode);
       window.location.href = "/Home";
     } catch (err: any) {
+      analytics.auth_error(mode, err.message || "Something went wrong");
       setError(err.message || "Something went wrong");
       setLoading(false);
     }
@@ -59,6 +63,7 @@ export default function Login() {
           <>
             <a
               href="/api/auth/google"
+              onClick={() => analytics.auth_google_click()}
               className="w-full py-3.5 border border-gray-200 text-sm text-gray-800 font-medium rounded-full hover:bg-gray-50 transition-colors flex items-center justify-center gap-2.5 mb-4"
             >
               <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
@@ -71,7 +76,7 @@ export default function Login() {
             </a>
 
             <button
-              onClick={() => setShowEmail(true)}
+              onClick={() => { analytics.auth_email_expand(); setShowEmail(true); }}
               className="w-full text-xs text-gray-400 hover:text-gray-600 transition-colors py-2"
             >
               Use email instead
@@ -121,7 +126,7 @@ export default function Login() {
             <p className="text-center text-sm text-gray-400">
               {mode === "login" ? "No account?" : "Already have one?"}{" "}
               <button
-                onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); }}
+                onClick={() => { const next = mode === "login" ? "register" : "login"; analytics.auth_mode_switch(next); setMode(next); setError(""); }}
                 className="text-black font-medium hover:underline"
               >
                 {mode === "login" ? "Sign up" : "Sign in"}

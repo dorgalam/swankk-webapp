@@ -6,6 +6,7 @@ import { Volume2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl, cdnUrl } from "@/utils";
 import ImageWithSkeleton from "@/components/swankk/ImageWithSkeleton";
+import { analytics } from "@/lib/analytics";
 
 function DesignerRow({ designer }: { designer: any }) {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ function DesignerRow({ designer }: { designer: any }) {
   const handleListen = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!designer.audio_url || isLoading || isPlaying) return;
+    analytics.designer_audio_play(designer.slug, designer.name);
     const audio = new Audio(designer.audio_url);
     setIsLoading(true);
     audio.oncanplaythrough = () => {

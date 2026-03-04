@@ -6,13 +6,15 @@ import { ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl, cdnUrl } from "@/utils";
 import ImageWithSkeleton from "@/components/swankk/ImageWithSkeleton";
+import { analytics } from "@/lib/analytics";
 
-function ProductCard({ product }: { product: any }) {
+function ProductCard({ product, contextType, contextSlug }: { product: any; contextType: 'trend' | 'designer'; contextSlug: string }) {
   return (
     <a
       href={product.link}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={() => analytics.product_click(product.name, contextType, contextSlug)}
       className="flex-shrink-0 w-[160px] group"
     >
       <div className="aspect-[3/4] rounded-xl overflow-hidden bg-gray-50 relative mb-2">
@@ -102,7 +104,7 @@ export default function Shop() {
 
                 <HorizontalScroll>
                   {(trend.products || []).map((product: any, i: number) => (
-                    <ProductCard key={i} product={product} />
+                    <ProductCard key={i} product={product} contextType="trend" contextSlug={trend.slug} />
                   ))}
                 </HorizontalScroll>
               </div>
@@ -132,7 +134,7 @@ export default function Shop() {
 
                 <HorizontalScroll>
                   {(designer.signature_pieces || []).map((piece: any, i: number) => (
-                    <ProductCard key={i} product={{ name: piece.name, image_url: piece.image_url, link: piece.link }} />
+                    <ProductCard key={i} product={{ name: piece.name, image_url: piece.image_url, link: piece.link }} contextType="designer" contextSlug={designer.slug} />
                   ))}
                 </HorizontalScroll>
               </div>
