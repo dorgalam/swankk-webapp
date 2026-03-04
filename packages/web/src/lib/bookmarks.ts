@@ -1,4 +1,4 @@
-export type BookmarkCategory = 'images' | 'designers' | 'products' | 'keywords';
+export type BookmarkCategory = 'images' | 'designers' | 'products' | 'styles';
 
 export interface ImageBookmark {
   id: string;
@@ -32,7 +32,7 @@ export interface KeywordBookmark {
   id: string;
   name: string;
   slug: string;
-  type: 'style' | 'trend';
+  type: 'style' | 'trend' | 'era';
   imageUrl?: string;
   savedAt: number;
 }
@@ -41,7 +41,7 @@ const STORAGE_KEYS: Record<BookmarkCategory, string> = {
   images: 'swankk_bookmarks_images',
   designers: 'swankk_bookmarks_designers',
   products: 'swankk_bookmarks_products',
-  keywords: 'swankk_bookmarks_keywords',
+  styles: 'swankk_bookmarks_styles',
 };
 
 function load(category: BookmarkCategory): any[] {

@@ -8,6 +8,13 @@ import { createPageUrl, cdnUrl } from "@/utils";
 import SaveButton from "@/components/swankk/SaveButton";
 import ImageWithSkeleton from "@/components/swankk/ImageWithSkeleton";
 
+async function fetchImageTags(url: string): Promise<string[]> {
+  const res = await fetch(`/api/images/tags?url=${encodeURIComponent(url)}`);
+  if (!res.ok) return [];
+  const data = await res.json() as { tags: string[] };
+  return data.tags || [];
+}
+
 const SWIPE_THRESHOLD = 50;
 
 export default function ImageDetail() {
@@ -83,6 +90,12 @@ export default function ImageDetail() {
 
   const currentImageUrl = eraImages[currentIdx];
   const imageBookmarkId = `era_${slug}_${eraIndex}_${currentIdx}`;
+
+  const { data: imageTags = [] } = useQuery({
+    queryKey: ["imageTags", currentImageUrl],
+    queryFn: () => fetchImageTags(cdnUrl(currentImageUrl)),
+    enabled: !!currentImageUrl,
+  });
 
   return (
     <div className="min-h-screen pb-20">
@@ -213,7 +226,7 @@ export default function ImageDetail() {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 mb-8">
+        <div className="flex flex-wrap gap-2 mb-4">
           <Link
             to={createPageUrl(`DesignerWorld?slug=${designer.slug}`)}
             className="px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-full text-sm text-gray-700 hover:bg-gray-100 transition-colors"
@@ -230,6 +243,20 @@ export default function ImageDetail() {
             </Link>
           ))}
         </div>
+
+        {(imageTags as string[]).length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-8">
+            {(imageTags as string[]).map((tag: string, i: number) => (
+              <Link
+                key={i}
+                to={createPageUrl(`TagDiscovery?tag=${encodeURIComponent(tag)}`)}
+                className="px-3 py-1.5 bg-black/5 border border-black/10 rounded-full text-sm text-gray-800 hover:bg-black/10 transition-colors"
+              >
+                {tag}
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* More from designer (other eras) */}

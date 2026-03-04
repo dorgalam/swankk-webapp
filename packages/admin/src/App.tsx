@@ -7,6 +7,9 @@ import Designers from '@/pages/Designers'
 import DesignerForm from '@/pages/DesignerForm'
 import DesignerRequests from '@/pages/DesignerRequests'
 import Users from '@/pages/Users'
+import Colors from '@/pages/Colors'
+import ColorForm from '@/pages/ColorForm'
+import ImageTags from '@/pages/ImageTags'
 import Styles from '@/pages/Styles'
 import Trends from '@/pages/Trends'
 import TrendForm from '@/pages/TrendForm'
@@ -34,9 +37,13 @@ export default function App() {
               <Route path="designers/new" element={<DesignerForm />} />
               <Route path="designers/:id/edit" element={<DesignerForm />} />
               <Route path="styles" element={<Styles />} />
+              <Route path="colors" element={<Colors />} />
+              <Route path="colors/new" element={<ColorForm />} />
+              <Route path="colors/:id/edit" element={<ColorForm />} />
               <Route path="trends" element={<Trends />} />
               <Route path="trends/new" element={<TrendForm />} />
               <Route path="trends/:id/edit" element={<TrendForm />} />
+              <Route path="image-tags" element={<ImageTags />} />
               <Route path="requests" element={<DesignerRequests />} />
               <Route path="users" element={<Users />} />
               <Route path="*" element={<Navigate to="/" replace />} />

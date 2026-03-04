@@ -10,14 +10,21 @@ import ImageWithSkeleton from "@/components/swankk/ImageWithSkeleton";
 function DesignerRow({ designer }: { designer: any }) {
   const navigate = useNavigate();
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleListen = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!designer.audio_url) return;
+    if (!designer.audio_url || isLoading || isPlaying) return;
     const audio = new Audio(designer.audio_url);
-    setIsPlaying(true);
-    audio.play();
+    setIsLoading(true);
+    audio.oncanplaythrough = () => {
+      setIsLoading(false);
+      setIsPlaying(true);
+      audio.play();
+    };
     audio.onended = () => setIsPlaying(false);
+    audio.onerror = () => { setIsLoading(false); setIsPlaying(false); };
+    audio.load();
   };
 
   return (
@@ -45,15 +52,18 @@ function DesignerRow({ designer }: { designer: any }) {
       {designer.audio_url && (
         <button
           onClick={handleListen}
+          disabled={isLoading}
           className={`p-2 rounded-full border transition-all shrink-0 ${
             isPlaying
               ? "border-black bg-black text-white"
+              : isLoading
+              ? "border-gray-100 text-gray-300"
               : "border-gray-200 text-gray-500 hover:border-gray-400"
           }`}
           aria-label="Listen to pronunciation"
         >
           <Volume2
-            className={`w-3.5 h-3.5 ${isPlaying ? "animate-pulse" : ""}`}
+            className={`w-3.5 h-3.5 ${isPlaying ? "animate-pulse" : isLoading ? "animate-spin opacity-50" : ""}`}
             strokeWidth={1.5}
           />
         </button>

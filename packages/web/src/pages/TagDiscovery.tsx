@@ -107,7 +107,7 @@ export default function TagDiscovery() {
           </motion.h1>
           {currentStyle && (
             <SaveButton
-              category="keywords"
+              category="styles"
               id={`style_${currentStyle.slug}`}
               item={{
                 name: currentStyle.name,

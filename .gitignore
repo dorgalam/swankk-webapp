@@ -1,6 +1,7 @@
 .env
 .env.*
 .dev.vars
+google_signing_secret.json
 
 node_modules/
 dist/

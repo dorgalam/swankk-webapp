@@ -134,9 +134,59 @@ INSERT OR IGNORE INTO styles (name, slug) VALUES
   ('Marni', 'marni'),
   ('Hermès', 'hermes');
 
+CREATE TABLE IF NOT EXISTS colors (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  hex TEXT NOT NULL DEFAULT '',
+  description TEXT DEFAULT '',
+  main_image_url TEXT DEFAULT '',
+  images TEXT DEFAULT '[]',
+  products TEXT DEFAULT '[]',
+  related_tags TEXT NOT NULL DEFAULT '[]',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS image_tags (
+  url_hash  TEXT PRIMARY KEY,            -- md5(url), 32-char hex — matches image_cache filename
+  url       TEXT NOT NULL,
+  entity_type TEXT NOT NULL,             -- 'designer' | 'trend' | 'color'
+  entity_id   INTEGER NOT NULL,
+  entity_slug TEXT NOT NULL,
+  role        TEXT DEFAULT '',           -- 'hero' | 'era' | 'trend' | 'product'
+  top_styles  TEXT NOT NULL DEFAULT '[]', -- JSON array  ["Prada", "Chanel", ...]
+  all_scores  TEXT NOT NULL DEFAULT '{}', -- JSON object {"prada": 0.12, ...}
+  tagged_at   TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_image_tags_entity ON image_tags(entity_type, entity_id);
+
+-- Normalized tag rows — one per (image, tag) — powers fast similarity queries.
+CREATE TABLE IF NOT EXISTS image_tag_items (
+  url_hash TEXT NOT NULL REFERENCES image_tags(url_hash) ON DELETE CASCADE,
+  tag      TEXT NOT NULL,
+  PRIMARY KEY (url_hash, tag)
+);
+
+CREATE INDEX IF NOT EXISTS idx_image_tag_items_tag ON image_tag_items(tag);
+
+CREATE TABLE IF NOT EXISTS bookmarks (
+  id        INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  category  TEXT NOT NULL,                        -- 'images' | 'designers' | 'products' | 'styles'
+  item_id   TEXT NOT NULL,
+  data      TEXT NOT NULL DEFAULT '{}',           -- JSON snapshot of the bookmark payload
+  saved_at  TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(user_id, category, item_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_bookmarks_user ON bookmarks(user_id, category);
+
 -- Migration history (already applied to remote DB):
 -- ALTER TABLE keywords RENAME TO styles;
 -- ALTER TABLE trends DROP COLUMN keywords;
 -- ALTER TABLE designers ADD COLUMN related_tags TEXT NOT NULL DEFAULT '[]';
 -- ALTER TABLE styles ADD COLUMN related_tags TEXT NOT NULL DEFAULT '[]';
 -- ALTER TABLE trends ADD COLUMN related_tags TEXT NOT NULL DEFAULT '[]';
+-- CREATE TABLE IF NOT EXISTS colors (...) -- run schema.sql colors block against D1

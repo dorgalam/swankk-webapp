@@ -8,6 +8,8 @@ import DashboardIcon from '@mui/icons-material/Dashboard'
 import BrushIcon from '@mui/icons-material/Brush'
 import InboxIcon from '@mui/icons-material/Inbox'
 import PeopleIcon from '@mui/icons-material/People'
+import ColorLensIcon from '@mui/icons-material/ColorLens'
+import ImageIcon from '@mui/icons-material/Image'
 import LabelIcon from '@mui/icons-material/Label'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
@@ -18,7 +20,9 @@ const navItems = [
   { label: 'Dashboard', icon: <DashboardIcon />, path: '/' },
   { label: 'Designers', icon: <BrushIcon />, path: '/designers' },
   { label: 'Styles', icon: <LabelIcon />, path: '/styles' },
+  { label: 'Colors', icon: <ColorLensIcon />, path: '/colors' },
   { label: 'Trends', icon: <TrendingUpIcon />, path: '/trends' },
+  { label: 'Image Tags', icon: <ImageIcon />, path: '/image-tags' },
   { label: 'Requests', icon: <InboxIcon />, path: '/requests' },
   { label: 'Users', icon: <PeopleIcon />, path: '/users' },
 ]

@@ -1,7 +1,11 @@
 import React from 'react';
+import AllColors from './pages/AllColors';
 import AllDesigners from './pages/AllDesigners';
+import AllEras from './pages/AllEras';
 import AllStyles from './pages/AllStyles';
 import AllTrends from './pages/AllTrends';
+import Shop from './pages/Shop';
+import ColorDetail from './pages/ColorDetail';
 import ContentEditor from './pages/ContentEditor';
 import DesignerWorld from './pages/DesignerWorld';
 import EraGallery from './pages/EraGallery';
@@ -19,9 +23,13 @@ import __Layout from './Layout';
 
 
 export const PAGES: Record<string, React.ComponentType> = {
+    "AllColors": AllColors,
     "AllDesigners": AllDesigners,
+    "AllEras": AllEras,
     "AllStyles": AllStyles,
     "AllTrends": AllTrends,
+    "Shop": Shop,
+    "ColorDetail": ColorDetail,
     "ContentEditor": ContentEditor,
     "DesignerWorld": DesignerWorld,
     "EraGallery": EraGallery,

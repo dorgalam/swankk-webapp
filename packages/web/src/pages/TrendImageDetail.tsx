@@ -6,6 +6,21 @@ import { ArrowLeft, Info } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl, cdnUrl } from "@/utils";
 import SaveButton from "@/components/swankk/SaveButton";
+import ImageWithSkeleton from "@/components/swankk/ImageWithSkeleton";
+
+async function fetchSimilar(imageUrl: string, limit = 12) {
+  const res = await fetch(`/api/images/similar?url=${encodeURIComponent(imageUrl)}&limit=${limit}`);
+  if (!res.ok) return [];
+  const data = await res.json() as { images: any[] };
+  return data.images || [];
+}
+
+function similarImageNav(img: any): string {
+  if (img.entity_type === "trend") return createPageUrl(`TrendDetail?slug=${img.entity_slug}`);
+  if (img.entity_type === "designer") return createPageUrl(`DesignerWorld?slug=${img.entity_slug}`);
+  if (img.entity_type === "color") return createPageUrl(`ColorDetail?slug=${img.entity_slug}`);
+  return createPageUrl("Home");
+}
 
 const SWIPE_THRESHOLD = 50;
 
@@ -55,6 +70,13 @@ export default function TrendImageDetail() {
   }
 
   const currentImage = images[currentIdx];
+  const currentCdnUrl = currentImage ? cdnUrl(currentImage) : "";
+
+  const { data: similarImages = [] } = useQuery({
+    queryKey: ["similar", currentCdnUrl],
+    queryFn: () => fetchSimilar(currentCdnUrl),
+    enabled: !!currentCdnUrl,
+  });
 
   if (!trend || !currentImage) {
     return (
@@ -195,6 +217,36 @@ export default function TrendImageDetail() {
           </div>
         </motion.div>
       </div>
+
+      {/* Similar images */}
+      {(similarImages as any[]).length > 0 && (
+        <div className="px-5 md:px-8 border-t border-gray-100 pt-8">
+          <p className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium mb-4">
+            You may also like
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-2xl mx-auto">
+            {(similarImages as any[]).map((img: any, i: number) => (
+              <motion.div
+                key={img.url_hash}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.04 }}
+                className="group cursor-pointer"
+                onClick={() => navigate(similarImageNav(img))}
+              >
+                <div className="aspect-[3/4] rounded-xl overflow-hidden relative">
+                  <ImageWithSkeleton
+                    src={cdnUrl(img.url)}
+                    alt={img.entity_slug}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1.5 truncate">{img.entity_slug.replace(/-/g, " ")}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

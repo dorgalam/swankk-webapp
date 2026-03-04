@@ -36,13 +36,13 @@ export default function QuickFacts({ designer }: { designer: any }) {
 
       {Array.isArray(designer.known_for_tags) && designer.known_for_tags.length > 0 && (
         <div className="mt-4">
-          <span className="text-[10px] text-gray-400 tracking-wide">Known for</span>
-          <div className="flex flex-wrap gap-1.5 mt-2">
+          <span className="text-xs text-gray-400 tracking-wide">Known for</span>
+          <div className="flex flex-wrap gap-2 mt-2">
             {designer.known_for_tags.map((tag: any, i: number) => (
               <Link
                 key={i}
                 to={createPageUrl(`TagDiscovery?tag=${encodeURIComponent(tag.name || tag)}`)}
-                className="px-2 py-1 bg-gray-50 border border-gray-100 rounded-full text-[10px] text-gray-700 tracking-wide hover:border-gray-400 transition-colors"
+                className="px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-full text-sm text-gray-700 hover:border-gray-400 transition-colors"
               >
                 {tag.name || tag}
               </Link>

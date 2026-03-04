@@ -131,6 +131,44 @@ interface TrendProduct {
   link: string
 }
 
+interface ColorProduct {
+  name: string
+  image_url: string
+  link: string
+}
+
+interface ColorRow {
+  id: number
+  name: string
+  slug: string
+  hex: string
+  description: string
+  main_image_url: string
+  images: string | string[]
+  products: string | ColorProduct[]
+  related_tags: string | string[]
+  created_at?: string
+  updated_at?: string
+}
+
+interface Color extends Omit<ColorRow, 'images' | 'products' | 'related_tags'> {
+  images: string[]
+  products: ColorProduct[]
+  related_tags: string[]
+}
+
+interface ColorInput {
+  name: string
+  slug?: string
+  hex?: string
+  description?: string
+  main_image_url?: string
+  images?: string[]
+  products?: ColorProduct[]
+  related_tags?: string[]
+  [key: string]: unknown
+}
+
 interface TrendInput {
   name: string
   slug?: string
@@ -246,6 +284,16 @@ function parseTrendRow(row: TrendRow | undefined): Trend | null {
     ...row,
     designer_slugs: JSON.parse((row.designer_slugs as string) || '[]'),
     preview_images: JSON.parse((row.preview_images as string) || '[]'),
+    images: JSON.parse((row.images as string) || '[]'),
+    products: JSON.parse((row.products as string) || '[]'),
+    related_tags: JSON.parse((row.related_tags as string) || '[]'),
+  }
+}
+
+function parseColorRow(row: ColorRow | undefined): Color | null {
+  if (!row) return null
+  return {
+    ...row,
     images: JSON.parse((row.images as string) || '[]'),
     products: JSON.parse((row.products as string) || '[]'),
     related_tags: JSON.parse((row.related_tags as string) || '[]'),
@@ -534,6 +582,90 @@ const adminApi = {
     },
   },
 
+  colors: {
+    async list(): Promise<Color[]> {
+      const { results } = await query('SELECT * FROM colors ORDER BY name ASC')
+      return results.map((r) => parseColorRow(r as unknown as ColorRow)!)
+    },
+    async getById(id: string | number): Promise<Color | null> {
+      const { results } = await query('SELECT * FROM colors WHERE id = ?', [id])
+      return parseColorRow(results[0] as unknown as ColorRow)
+    },
+    async create(data: ColorInput) {
+      const slug = data.slug || slugify(data.name)
+      const { meta } = await query(
+        `INSERT INTO colors (name, slug, hex, description, main_image_url, images, products, related_tags)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          data.name, slug, data.hex || '', data.description || '',
+          data.main_image_url || '',
+          JSON.stringify(data.images || []),
+          JSON.stringify(data.products || []),
+          JSON.stringify(data.related_tags || []),
+        ],
+      )
+      return meta
+    },
+    async update(id: string | number, data: ColorInput) {
+      const sets: string[] = []
+      const params: unknown[] = []
+      const fields = ['name', 'slug', 'hex', 'description', 'main_image_url']
+      const jsonFields = ['images', 'products', 'related_tags']
+
+      for (const f of fields) {
+        if (f in data) {
+          sets.push(`${f} = ?`)
+          params.push(data[f])
+        }
+      }
+      for (const f of jsonFields) {
+        if (f in data) {
+          sets.push(`${f} = ?`)
+          params.push(JSON.stringify(data[f]))
+        }
+      }
+      if (sets.length === 0) return
+      sets.push("updated_at = datetime('now')")
+      params.push(id)
+      const { meta } = await query(`UPDATE colors SET ${sets.join(', ')} WHERE id = ?`, params)
+      return meta
+    },
+    async delete(id: number) {
+      const { meta } = await query('DELETE FROM colors WHERE id = ?', [id])
+      return meta
+    },
+  },
+
+  imageTags: {
+    async list(entityType?: string, limit = 50, offset = 0): Promise<ImageTag[]> {
+      const where = entityType ? `WHERE entity_type = '${entityType}'` : '';
+      const { results } = await query(
+        `SELECT url_hash, url, entity_type, entity_id, entity_slug, role, top_styles, tagged_at
+         FROM image_tags ${where} ORDER BY tagged_at DESC LIMIT ? OFFSET ?`,
+        [limit, offset],
+      );
+      return (results as unknown as ImageTagRow[]).map((r) => ({
+        ...r,
+        top_styles: JSON.parse(r.top_styles || '[]'),
+      }));
+    },
+    async count(entityType?: string): Promise<number> {
+      const where = entityType ? `WHERE entity_type = '${entityType}'` : '';
+      const { results } = await query(`SELECT COUNT(*) AS n FROM image_tags ${where}`);
+      return (results[0] as unknown as { n: number }).n;
+    },
+    async updateTags(urlHash: string, topStyles: string[]) {
+      await query('DELETE FROM image_tag_items WHERE url_hash = ?', [urlHash]);
+      await query(
+        "UPDATE image_tags SET top_styles = ?, tagged_at = datetime('now') WHERE url_hash = ?",
+        [JSON.stringify(topStyles), urlHash],
+      );
+      for (const tag of topStyles) {
+        await query('INSERT OR REPLACE INTO image_tag_items (url_hash, tag) VALUES (?, ?)', [urlHash, tag]);
+      }
+    },
+  },
+
   users: {
     async list(): Promise<User[]> {
       const { results } = await query(`
@@ -546,9 +678,26 @@ const adminApi = {
   },
 }
 
+interface ImageTagRow {
+  url_hash: string;
+  url: string;
+  entity_type: string;
+  entity_id: number;
+  entity_slug: string;
+  role: string;
+  top_styles: string;
+  tagged_at: string;
+}
+
+interface ImageTag extends Omit<ImageTagRow, 'top_styles'> {
+  top_styles: string[];
+}
+
 export default adminApi
 export { slugify }
 export type {
+  Color, ColorInput, ColorProduct, ColorRow,
   Designer, DesignerInput, DesignerRequest, DesignerRow, Era, Style,
+  ImageTag, ImageTagRow,
   Piece, StatCounts, Tag, Trend, TrendInput, TrendProduct, User,
 }

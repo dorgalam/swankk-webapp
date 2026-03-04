@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Bookmark, Menu, X, ArrowRight } from "lucide-react";
+import { Search, Bookmark, Menu, X, ArrowRight, LogOut } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
+import { useAuth } from "@/lib/AuthContext";
 import Sidebar from "./Sidebar";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -15,9 +16,11 @@ const TYPE_LABELS: Record<string, string> = {
 
 export default function TopBar({ currentPageName }: { currentPageName?: string }) {
   const navigate = useNavigate();
+  const { user, isAuthenticated, logout } = useAuth();
   const [showSearch, setShowSearch] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   const { data: designers = [] } = useQuery({
     queryKey: ["designers"],
@@ -89,6 +92,46 @@ export default function TopBar({ currentPageName }: { currentPageName?: string }
             >
               <Bookmark className="w-[17px] h-[17px] text-gray-700" strokeWidth={1.5} />
             </Link>
+
+            {isAuthenticated && user && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowUserMenu((v) => !v)}
+                  className="w-7 h-7 rounded-full bg-black text-white text-[11px] font-medium flex items-center justify-center hover:bg-gray-800 transition-colors ml-0.5"
+                  aria-label="Account"
+                >
+                  {(user.full_name || user.email)[0].toUpperCase()}
+                </button>
+                <AnimatePresence>
+                  {showUserMenu && (
+                    <>
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[55]"
+                        onClick={() => setShowUserMenu(false)}
+                      />
+                      <motion.div
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        className="absolute right-0 top-9 z-[56] bg-white border border-gray-100 rounded-xl shadow-lg w-48 py-1 overflow-hidden"
+                      >
+                        <p className="px-4 py-2 text-xs text-gray-400 truncate border-b border-gray-50">{user.email}</p>
+                        <button
+                          onClick={async () => { setShowUserMenu(false); await logout(); navigate("/Login"); }}
+                          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          <LogOut className="w-3.5 h-3.5" strokeWidth={1.5} />
+                          Sign out
+                        </button>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
 
             <button
               onClick={() => setShowSidebar(true)}

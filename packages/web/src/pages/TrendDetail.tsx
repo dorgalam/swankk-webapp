@@ -84,7 +84,7 @@ export default function TrendDetail() {
               {trend.name}
             </h1>
             <SaveButton
-              category="keywords"
+              category="styles"
               id={`trend_${slug}`}
               item={{
                 name: trend.name,

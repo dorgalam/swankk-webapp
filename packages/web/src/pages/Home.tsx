@@ -208,7 +208,7 @@ if (!hasSeenLanding) {
         {filteredEras.length > 0 && (
           <div>
             <p className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium mb-8">
-              Defining Eras
+              Fashion Through Time
             </p>
 
             <div className="space-y-10">

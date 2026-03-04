@@ -5,6 +5,8 @@ export interface Env {
   ASSETS_BUCKET: R2Bucket;
   SITE_SECRET?: string;
   SWANKK_JWT_SECRET?: string;
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
 }
 
 /** JWT payload set by middleware on context.data */

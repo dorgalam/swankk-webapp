@@ -13,6 +13,8 @@ const NAV_ITEMS = [
   { label: "Trends", page: "AllTrends" },
   { label: "Designers", page: "AllDesigners" },
   { label: "Styles", page: "AllStyles" },
+  { label: "Eras", page: "AllEras" },
+  { label: "Shop", page: "Shop" },
 ];
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
@@ -78,12 +80,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               ))}
             </nav>
 
-            {/* Footer */}
-            <div className="px-6 py-5 border-t border-gray-100">
-              <p className="text-[10px] tracking-[0.2em] uppercase text-gray-300 font-medium">
-                Fashion Intelligence
-              </p>
-            </div>
           </motion.div>
         </>
       )}
