@@ -19,10 +19,6 @@ export default function TrendDetail() {
     window.scrollTo(0, 0);
   }, [slug]);
 
-  React.useEffect(() => {
-    if (trend) analytics.trend_view(slug, trend.name);
-  }, [slug, trend?.name]);
-
   const { data: trends = [], isLoading } = useQuery({
     queryKey: ["trend", slug],
     queryFn: () => api.trends.filter({ slug }),
@@ -39,6 +35,10 @@ export default function TrendDetail() {
   });
 
   const trend = (trends as any[])[0];
+
+  React.useEffect(() => {
+    if (trend) analytics.trend_view(slug, trend.name);
+  }, [slug, trend?.name]);
 
   if (isLoading) {
     return (
