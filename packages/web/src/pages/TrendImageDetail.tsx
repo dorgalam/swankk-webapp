@@ -226,13 +226,13 @@ export default function TrendImageDetail() {
       </div>
 
       {/* Similar images */}
-      {(similarImages as any[]).length > 0 && (
+      {(similarImages as any[]).some((img: any) => img.entity_type === "trend") && (
         <div className="px-5 md:px-8 border-t border-gray-100 pt-8">
           <p className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium mb-4">
             You may also like
           </p>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-2xl mx-auto">
-            {(similarImages as any[]).map((img: any, i: number) => (
+            {(similarImages as any[]).filter((img: any) => img.entity_type === "trend").map((img: any, i: number) => (
               <motion.div
                 key={img.url_hash}
                 initial={{ opacity: 0, y: 20 }}
