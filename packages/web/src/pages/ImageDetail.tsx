@@ -81,6 +81,15 @@ export default function ImageDetail() {
     setCurrentIdx(newIdx);
   };
 
+  const currentImageUrl = eraImages[currentIdx];
+  const imageBookmarkId = `era_${slug}_${eraIndex}_${currentIdx}`;
+
+  const { data: imageTags = [] } = useQuery({
+    queryKey: ["imageTags", currentImageUrl],
+    queryFn: () => fetchImageTags(cdnUrl(currentImageUrl)),
+    enabled: !!currentImageUrl,
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -102,15 +111,6 @@ export default function ImageDetail() {
       </div>
     );
   }
-
-  const currentImageUrl = eraImages[currentIdx];
-  const imageBookmarkId = `era_${slug}_${eraIndex}_${currentIdx}`;
-
-  const { data: imageTags = [] } = useQuery({
-    queryKey: ["imageTags", currentImageUrl],
-    queryFn: () => fetchImageTags(cdnUrl(currentImageUrl)),
-    enabled: !!currentImageUrl,
-  });
 
   return (
     <div className="min-h-screen pb-20">
