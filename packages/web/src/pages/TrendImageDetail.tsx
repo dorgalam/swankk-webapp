@@ -16,8 +16,8 @@ async function fetchSimilar(imageUrl: string, limit = 12) {
 }
 
 function similarImageNav(img: any): string {
-  if (img.entity_type === "trend") return createPageUrl(`TrendDetail?slug=${img.entity_slug}`);
-  if (img.entity_type === "designer") return createPageUrl(`DesignerWorld?slug=${img.entity_slug}`);
+  if (img.entity_type === "trend") return createPageUrl(`TrendImageDetail?trendSlug=${img.entity_slug}&imageUrl=${encodeURIComponent(img.url)}`);
+  if (img.entity_type === "designer") return createPageUrl(`ImageDetail?slug=${img.entity_slug}&imageUrl=${encodeURIComponent(img.url)}`);
   if (img.entity_type === "color") return createPageUrl(`ColorDetail?slug=${img.entity_slug}`);
   return createPageUrl("Home");
 }
@@ -28,6 +28,7 @@ export default function TrendImageDetail() {
   const urlParams = new URLSearchParams(window.location.search);
   const trendSlug = urlParams.get("trendSlug") || "";
   const imageIndex = parseInt(urlParams.get("imageIndex") || "0");
+  const imageUrl = urlParams.get("imageUrl") || "";
   const navigate = useNavigate();
 
   const [currentIdx, setCurrentIdx] = useState(imageIndex);
@@ -39,7 +40,7 @@ export default function TrendImageDetail() {
     window.scrollTo(0, 0);
     setCurrentIdx(imageIndex);
     setShowInfo(false);
-  }, [trendSlug, imageIndex]);
+  }, [trendSlug, imageIndex, imageUrl]);
 
   const { data: trends = [], isLoading } = useQuery({
     queryKey: ["trend", trendSlug],
@@ -48,6 +49,12 @@ export default function TrendImageDetail() {
 
   const trend = (trends as any[])[0];
   const images: string[] = trend?.images || [];
+
+  useEffect(() => {
+    if (!imageUrl || !images.length) return;
+    const idx = images.findIndex((img) => img === imageUrl || cdnUrl(img) === imageUrl);
+    if (idx >= 0) setCurrentIdx(idx);
+  }, [imageUrl, images.length]);
 
   useEffect(() => {
     if (!thumbsRef.current || !images.length) return;
@@ -241,7 +248,6 @@ export default function TrendImageDetail() {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-1.5 truncate">{img.entity_slug.replace(/-/g, " ")}</p>
               </motion.div>
             ))}
           </div>

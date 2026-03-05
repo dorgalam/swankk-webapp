@@ -179,7 +179,7 @@ export default function TrendDetail() {
             className="mb-10"
           >
             <h2 className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium mb-4">
-              Shop the Look
+              Shop the Trend
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {(trend.products as any[]).map((product: any, i: number) => (
@@ -246,7 +246,7 @@ export default function TrendDetail() {
                   >
                     <div className="aspect-[3/4] rounded-xl overflow-hidden mb-2 relative">
                       <ImageWithSkeleton
-                        src={cdnUrl((t.images || [])[0])}
+                        src={cdnUrl((t.preview_images || [])[0])}
                         alt={t.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />

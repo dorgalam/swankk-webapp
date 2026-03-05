@@ -60,7 +60,7 @@ export default function AllStyles() {
       </div>
 
       <div className="px-5 md:px-8 space-y-6">
-        {(styles as any[]).map((style: any, index: number) => {
+        {(styles as any[]).filter((style: any) => getStyleImages(style.name).length > 0).map((style: any, index: number) => {
           const images = getStyleImages(style.name);
           return (
             <motion.div

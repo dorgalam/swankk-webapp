@@ -22,6 +22,7 @@ export default function ImageDetail() {
   const slug = urlParams.get("slug") || "";
   const eraIndex = parseInt(urlParams.get("era") || "0");
   const imageIndex = parseInt(urlParams.get("image") || "0");
+  const imageUrl = urlParams.get("imageUrl") || "";
   const navigate = useNavigate();
 
   const [currentIdx, setCurrentIdx] = useState(imageIndex);
@@ -33,7 +34,7 @@ export default function ImageDetail() {
     window.scrollTo(0, 0);
     setCurrentIdx(imageIndex);
     setShowInfo(false);
-  }, [slug, eraIndex, imageIndex]);
+  }, [slug, eraIndex, imageIndex, imageUrl]);
 
   const { data: designers = [], isLoading } = useQuery({
     queryKey: ["designer", slug],
@@ -41,6 +42,20 @@ export default function ImageDetail() {
   });
 
   const designer = designers[0] as any;
+
+  // If imageUrl param is set, navigate to the correct era/image once designer loads
+  useEffect(() => {
+    if (!imageUrl || !designer) return;
+    for (let ei = 0; ei < (designer.eras || []).length; ei++) {
+      const imgs: string[] = designer.eras[ei].images || [];
+      const ii = imgs.findIndex((u: string) => u === imageUrl || cdnUrl(u) === imageUrl);
+      if (ii >= 0 && (ei !== eraIndex || ii !== imageIndex)) {
+        navigate(createPageUrl(`ImageDetail?slug=${slug}&era=${ei}&image=${ii}`), { replace: true });
+        return;
+      }
+    }
+  }, [imageUrl, designer]);
+
   const era = designer?.eras?.[eraIndex];
   const eraImages: string[] = era?.images || [];
 
