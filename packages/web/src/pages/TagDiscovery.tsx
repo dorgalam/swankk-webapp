@@ -156,50 +156,6 @@ export default function TagDiscovery() {
           </motion.section>
         )}
 
-        {allEras.length > 0 && (
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <h2 className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium mb-4">
-              Visual Gallery
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-              {shuffle(
-                allEras.flatMap((era: any) =>
-                  (era.images || []).map((imgUrl: string, imgIdx: number) => ({
-                    imgUrl,
-                    designerSlug: era.designer_slug,
-                    eraIndex: era.eraIndex,
-                    imageIndex: imgIdx,
-                  }))
-                )
-              )
-                .slice(0, 12)
-                .map((item: any, i: number) => (
-                  <div
-                    key={i}
-                    className="aspect-[3/4] rounded-lg overflow-hidden cursor-pointer group relative"
-                    onClick={() =>
-                      navigate(
-                        createPageUrl(
-                          `ImageDetail?slug=${item.designerSlug}&era=${item.eraIndex}&image=${item.imageIndex}`
-                        )
-                      )
-                    }
-                  >
-                    <ImageWithSkeleton
-                      src={cdnUrl(item.imgUrl)}
-                      alt=""
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  </div>
-                ))}
-            </div>
-          </motion.section>
-        )}
-
         {(() => {
           const matchingTrends = (allTrends as any[]).filter((t: any) =>
             currentStyle && (t.related_tags || []).includes(`style:${currentStyle.slug}`)
@@ -230,6 +186,59 @@ export default function TagDiscovery() {
                     </div>
                     <p className="text-sm font-medium text-black">{trend.name}</p>
                   </Link>
+                ))}
+              </div>
+            </motion.section>
+          );
+        })()}
+
+        {allEras.length > 0 && (() => {
+          // Seeded shuffle so different slugs with the same designer pool show different images
+          const seed = tagSlug || tagName || "";
+          let h = 0;
+          for (let i = 0; i < seed.length; i++) h = (Math.imul(31, h) + seed.charCodeAt(i)) | 0;
+          const allImgs = allEras.flatMap((era: any) =>
+            (era.images || []).map((imgUrl: string, imgIdx: number) => ({
+              imgUrl,
+              designerSlug: era.designer_slug,
+              eraIndex: era.eraIndex,
+              imageIndex: imgIdx,
+            }))
+          );
+          const seeded = [...allImgs];
+          for (let i = seeded.length - 1; i > 0; i--) {
+            h = (Math.imul(1664525, h) + 1013904223) | 0;
+            const j = Math.abs(h) % (i + 1);
+            [seeded[i], seeded[j]] = [seeded[j], seeded[i]];
+          }
+          return (
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <h2 className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium mb-4">
+                Visual Gallery
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                {seeded.slice(0, 12).map((item: any, i: number) => (
+                  <div
+                    key={i}
+                    className="aspect-[3/4] rounded-lg overflow-hidden cursor-pointer group relative"
+                    onClick={() =>
+                      navigate(
+                        createPageUrl(
+                          `ImageDetail?slug=${item.designerSlug}&era=${item.eraIndex}&image=${item.imageIndex}`
+                        )
+                      )
+                    }
+                  >
+                    <ImageWithSkeleton
+                      src={cdnUrl(item.imgUrl)}
+                      alt=""
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  </div>
                 ))}
               </div>
             </motion.section>
