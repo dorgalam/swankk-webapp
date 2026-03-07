@@ -129,7 +129,7 @@ export default function TrendImageDetail() {
     exit: (dir: number) => ({ x: dir >= 0 ? "-100%" : "100%" }),
   };
 
-  const trendSimilarImages = (similarImages as any[]).filter((img: any) => img.entity_type === "trend");
+  const trendSimilarImages = similarImages as any[];
 
   // Style keywords from trend's related_tags
   const styleKeywords = (trend.related_tags || [])

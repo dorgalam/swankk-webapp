@@ -35,7 +35,7 @@ function decadeSortKey(label: string): number {
 
 export default function AllEras() {
   const navigate = useNavigate();
-  const [filterDecade, setFilterDecade] = useState<string | null>(null);
+  const [filterDecades, setFilterDecades] = useState<string[]>([]);
   const [filterDesigners, setFilterDesigners] = useState<string[]>([]);
   const [showYearPanel, setShowYearPanel] = useState(false);
   const [showDesignerPanel, setShowDesignerPanel] = useState(false);
@@ -69,7 +69,7 @@ export default function AllEras() {
   ).sort((a, b) => a.name.localeCompare(b.name));
 
   const filtered = allEras
-    .filter((e) => !filterDecade || decadeLabel(e.startYear) === filterDecade)
+    .filter((e) => filterDecades.length === 0 || filterDecades.includes(decadeLabel(e.startYear)))
     .filter((e) => filterDesigners.length === 0 || filterDesigners.includes(e.designer.slug));
 
   if (isLoading) {
@@ -109,18 +109,26 @@ export default function AllEras() {
         <div className="flex gap-2">
           <button
             onClick={() => setShowYearPanel(true)}
+            style={{ touchAction: 'manipulation' }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border transition-colors ${
-              filterDecade
+              filterDecades.length > 0
                 ? "bg-black text-white border-black"
                 : "border-gray-200 text-gray-600 hover:border-gray-400"
             }`}
           >
             <SlidersHorizontal className="w-3 h-3" strokeWidth={1.5} />
-            {filterDecade ? `${filterDecade}` : "Year"}
+            {filterDecades.length === 0
+              ? "Year"
+              : filterDecades.length === 1
+              ? filterDecades[0]
+              : filterDecades.length <= 3
+              ? filterDecades.join(" · ")
+              : `${filterDecades.slice(0, 2).join(" · ")} +${filterDecades.length - 2}`}
           </button>
 
           <button
             onClick={() => setShowDesignerPanel(true)}
+            style={{ touchAction: 'manipulation' }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border transition-colors ${
               filterDesigners.length > 0
                 ? "bg-black text-white border-black"
@@ -218,9 +226,9 @@ export default function AllEras() {
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                 <p className="text-sm font-medium text-black">Filter by Year</p>
                 <div className="flex items-center gap-2">
-                  {filterDecade && (
+                  {filterDecades.length > 0 && (
                     <button
-                      onClick={() => { analytics.era_decade_filter(null); setFilterDecade(null); }}
+                      onClick={() => { analytics.era_decade_filter(null); setFilterDecades([]); }}
                       className="text-xs text-gray-400 hover:text-black transition-colors"
                     >
                       Clear
@@ -235,27 +243,35 @@ export default function AllEras() {
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto py-2">
+                {decades.map((decade) => {
+                  const selected = filterDecades.includes(decade);
+                  return (
+                    <button
+                      key={decade}
+                      style={{ touchAction: 'manipulation' }}
+                      onClick={() => {
+                        analytics.era_decade_filter(decade);
+                        setFilterDecades((prev) =>
+                          selected ? prev.filter((d) => d !== decade) : [...prev, decade]
+                        );
+                      }}
+                      className={`w-full flex items-center justify-between px-5 py-3 text-sm transition-colors ${
+                        selected ? "text-black font-medium bg-gray-50" : "text-gray-600 hover:bg-gray-50"
+                      }`}
+                    >
+                      <span>{decade}</span>
+                      {selected && <Check className="w-3.5 h-3.5 text-black" strokeWidth={2} />}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="px-5 py-4 border-t border-gray-100">
                 <button
-                  onClick={() => { analytics.era_decade_filter(null); setFilterDecade(null); setShowYearPanel(false); }}
-                  className={`w-full flex items-center justify-between px-5 py-3 text-sm transition-colors ${
-                    !filterDecade ? "text-black font-medium bg-gray-50" : "text-gray-600 hover:bg-gray-50"
-                  }`}
+                  onClick={() => setShowYearPanel(false)}
+                  className="w-full py-2.5 bg-black text-white text-sm rounded-full"
                 >
-                  <span>All Years</span>
-                  {!filterDecade && <Check className="w-3.5 h-3.5 text-black" strokeWidth={2} />}
+                  {filterDecades.length === 0 ? "Show All" : "Show Results"}
                 </button>
-                {decades.map((decade) => (
-                  <button
-                    key={decade}
-                    onClick={() => { analytics.era_decade_filter(decade); setFilterDecade(decade); setShowYearPanel(false); }}
-                    className={`w-full flex items-center justify-between px-5 py-3 text-sm transition-colors ${
-                      filterDecade === decade ? "text-black font-medium bg-gray-50" : "text-gray-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    <span>{decade}</span>
-                    {filterDecade === decade && <Check className="w-3.5 h-3.5 text-black" strokeWidth={2} />}
-                  </button>
-                ))}
               </div>
             </motion.div>
           </>
