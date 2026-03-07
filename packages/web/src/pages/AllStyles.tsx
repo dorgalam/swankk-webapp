@@ -27,24 +27,32 @@ export default function AllStyles() {
     );
   }
 
-  // Build a map of style name → era images from matching designers
-  function getStyleImages(styleName: string): string[] {
-    const imgs: string[] = [];
-    for (const designer of designers as any[]) {
-      if (imgs.length >= 4) break;
-      const match = (designer.known_for_tags || []).some(
-        (t: any) => (t.name || t).toLowerCase() === styleName.toLowerCase()
-      );
-      if (match) {
-        for (const era of designer.eras || []) {
-          for (const img of era.images || []) {
-            if (imgs.length >= 4) break;
-            imgs.push(img);
-          }
-        }
-      }
+  // Build a map of style → images using a slug-seeded shuffle so each style
+  // shows a distinct set even when designer pools overlap (e.g. Minimalist vs Modernist)
+  function getStyleImages(styleName: string, styleSlug: string): string[] {
+    // Collect ALL images from matching designers in a stable sorted order
+    const pool: string[] = [...(designers as any[])]
+      .sort((a: any, b: any) => a.slug.localeCompare(b.slug))
+      .flatMap((designer: any) => {
+        const match = (designer.known_for_tags || []).some(
+          (t: any) => (t.name || t).toLowerCase() === styleName.toLowerCase()
+        );
+        if (!match) return [];
+        return (designer.eras || []).flatMap((era: any) => era.images || []);
+      });
+
+    if (pool.length === 0) return [];
+
+    // Slug-seeded Fisher-Yates shuffle for deterministic but style-specific ordering
+    let h = 0;
+    for (let i = 0; i < styleSlug.length; i++) h = (Math.imul(31, h) + styleSlug.charCodeAt(i)) | 0;
+    const shuffled = [...pool];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      h = (Math.imul(1664525, h) + 1013904223) | 0;
+      const j = Math.abs(h) % (i + 1);
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
-    return imgs;
+    return shuffled.slice(0, 4);
   }
 
   return (
@@ -60,8 +68,8 @@ export default function AllStyles() {
       </div>
 
       <div className="px-5 md:px-8 space-y-6">
-        {(styles as any[]).filter((style: any) => getStyleImages(style.name).length > 0).map((style: any, index: number) => {
-          const images = getStyleImages(style.name);
+        {(styles as any[]).filter((style: any) => getStyleImages(style.name, style.slug).length > 0).map((style: any, index: number) => {
+          const images = getStyleImages(style.name, style.slug);
           return (
             <motion.div
               key={style.id}
