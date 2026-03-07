@@ -6,6 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl, cdnUrl } from "@/utils";
 import TasteOnboarding from "@/components/swankk/TasteOnboarding";
 import TasteEditModal from "@/components/swankk/TasteEditModal";
+import { Pencil } from "lucide-react";
 
 export default function Home() {
   
@@ -126,6 +127,7 @@ if (!hasSeenLanding) {
           <TasteOnboarding
             onComplete={handleOnboardingComplete}
             onSkip={handleOnboardingSkip}
+            designers={allDesigners as any[]}
           />
         )}
         {showEditModal && (
@@ -133,6 +135,7 @@ if (!hasSeenLanding) {
             currentHouses={userTaste || []}
             onSave={handleEditTaste}
             onClose={() => setShowEditModal(false)}
+            designers={allDesigners as any[]}
           />
         )}
       </AnimatePresence>
@@ -141,9 +144,10 @@ if (!hasSeenLanding) {
         {userTaste && userTaste.length > 0 && (
           <button
             onClick={() => setShowEditModal(true)}
-            className="mb-6 text-xs text-gray-500 hover:text-black transition-colors"
+            className="mb-6 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 text-xs text-gray-600 hover:border-gray-400 hover:text-black transition-colors group"
           >
-            Tuned to: {userTaste.join(" • ")}
+            <span>Tuned to: {userTaste.join(" • ")}</span>
+            <Pencil className="w-3 h-3 text-gray-400 group-hover:text-black transition-colors" strokeWidth={1.5} />
           </button>
         )}
 
@@ -173,9 +177,12 @@ if (!hasSeenLanding) {
 
                 return (
                   <div key={trend.id}>
-                    <h2 className="font-serif text-2xl md:text-3xl font-medium text-black mb-4">
+                    <Link
+                      to={createPageUrl(`TrendDetail?slug=${trend.slug}`)}
+                      className="font-serif text-2xl md:text-3xl font-medium text-black mb-4 hover:underline inline-block"
+                    >
                       {trend.name}
-                    </h2>
+                    </Link>
 
                     <div className="relative -mx-5 md:-mx-8">
                       <div className="overflow-x-auto scrollbar-hide px-5 md:px-8">
@@ -219,9 +226,12 @@ if (!hasSeenLanding) {
                 return (
                   <div key={`${era.designer.id}-${era.eraIndex}`}>
                     <div className="mb-4">
-                      <h2 className="font-serif text-2xl md:text-3xl font-medium text-black">
+                      <Link
+                        to={createPageUrl(`EraGallery?slug=${era.designer.slug}&era=${era.eraIndex}`)}
+                        className="font-serif text-2xl md:text-3xl font-medium text-black hover:underline inline-block"
+                      >
                         {era.title}
-                      </h2>
+                      </Link>
                       <p className="text-sm text-gray-400 mt-1">
                         {era.year_range} · {era.designer.name}
                       </p>

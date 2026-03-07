@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl, cdnUrl } from "@/utils";
 import ImageWithSkeleton from "@/components/swankk/ImageWithSkeleton";
-import { SlidersHorizontal, X } from "lucide-react";
+import { SlidersHorizontal, X, Check } from "lucide-react";
 import { analytics } from "@/lib/analytics";
 
 interface EraEntry {
@@ -36,10 +36,10 @@ function decadeSortKey(label: string): number {
 export default function AllEras() {
   const navigate = useNavigate();
   const [filterDecade, setFilterDecade] = useState<string | null>(null);
-  const [filterDesigner, setFilterDesigner] = useState<string | null>(null);
+  const [filterDesigners, setFilterDesigners] = useState<string[]>([]);
   const [showDesignerPanel, setShowDesignerPanel] = useState(false);
 
-  const { data: allDesigners = [], isLoading } = useQuery({
+  const { data: allDesigners = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["designers"],
     queryFn: () => api.designers.list(),
   });
@@ -69,12 +69,26 @@ export default function AllEras() {
 
   const filtered = allEras
     .filter((e) => !filterDecade || decadeLabel(e.startYear) === filterDecade)
-    .filter((e) => !filterDesigner || e.designer.slug === filterDesigner);
+    .filter((e) => filterDesigners.length === 0 || filterDesigners.includes(e.designer.slug));
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="w-6 h-6 border-2 border-gray-200 border-t-black rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] px-5 gap-4">
+        <p className="text-gray-500 text-sm">Failed to load eras.</p>
+        <button
+          onClick={() => refetch()}
+          className="px-5 py-2 bg-black text-white text-sm rounded-full"
+        >
+          Retry
+        </button>
       </div>
     );
   }
@@ -91,23 +105,25 @@ export default function AllEras() {
         </motion.h1>
 
         {/* Decade filter + designer filter toggle */}
-        <div className="flex items-center gap-2">
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide flex-1 pb-0.5">
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={() => { analytics.era_decade_filter(null); setFilterDecade(null); }}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs border transition-colors ${
+              style={{ touchAction: 'manipulation' }}
+              className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
                 filterDecade === null
                   ? "bg-black text-white border-black"
                   : "border-gray-200 text-gray-600 hover:border-gray-400"
               }`}
             >
-              All
+              All Years
             </button>
             {decades.map((decade) => (
               <button
                 key={decade}
                 onClick={() => { const next = filterDecade === decade ? null : decade; analytics.era_decade_filter(next); setFilterDecade(next); }}
-                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                style={{ touchAction: 'manipulation' }}
+                className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
                   filterDecade === decade
                     ? "bg-black text-white border-black"
                     : "border-gray-200 text-gray-600 hover:border-gray-400"
@@ -120,16 +136,18 @@ export default function AllEras() {
 
           <button
             onClick={() => setShowDesignerPanel(true)}
-            className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border transition-colors ${
-              filterDesigner
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border transition-colors ${
+              filterDesigners.length > 0
                 ? "bg-black text-white border-black"
                 : "border-gray-200 text-gray-600 hover:border-gray-400"
             }`}
           >
             <SlidersHorizontal className="w-3 h-3" strokeWidth={1.5} />
-            {filterDesigner
-              ? designersWithEras.find((d) => d.slug === filterDesigner)?.name
-              : "Designer"}
+            {filterDesigners.length === 0
+              ? "Filter by Designer"
+              : filterDesigners.length === 1
+              ? designersWithEras.find((d) => d.slug === filterDesigners[0])?.name
+              : `${filterDesigners.length} Designers`}
           </button>
         </div>
       </div>
@@ -214,45 +232,52 @@ export default function AllEras() {
             >
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                 <p className="text-sm font-medium text-black">Filter by Designer</p>
-                <button
-                  onClick={() => setShowDesignerPanel(false)}
-                  className="p-1.5 rounded-full hover:bg-gray-50 transition-colors"
-                >
-                  <X className="w-4 h-4 text-gray-500" strokeWidth={1.5} />
-                </button>
+                <div className="flex items-center gap-2">
+                  {filterDesigners.length > 0 && (
+                    <button
+                      onClick={() => { setFilterDesigners([]); }}
+                      className="text-xs text-gray-400 hover:text-black transition-colors"
+                    >
+                      Clear
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowDesignerPanel(false)}
+                    className="p-1.5 rounded-full hover:bg-gray-50 transition-colors"
+                  >
+                    <X className="w-4 h-4 text-gray-500" strokeWidth={1.5} />
+                  </button>
+                </div>
               </div>
               <div className="flex-1 overflow-y-auto py-2">
+                {designersWithEras.map((d) => {
+                  const selected = filterDesigners.includes(d.slug);
+                  return (
+                    <button
+                      key={d.slug}
+                      onClick={() => {
+                        analytics.era_designer_filter(d.slug);
+                        setFilterDesigners((prev) =>
+                          selected ? prev.filter((s) => s !== d.slug) : [...prev, d.slug]
+                        );
+                      }}
+                      className={`w-full flex items-center justify-between px-5 py-3 text-sm transition-colors ${
+                        selected ? "text-black font-medium bg-gray-50" : "text-gray-600 hover:bg-gray-50"
+                      }`}
+                    >
+                      <span>{d.name}</span>
+                      {selected && <Check className="w-3.5 h-3.5 text-black" strokeWidth={2} />}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="px-5 py-4 border-t border-gray-100">
                 <button
-                  onClick={() => {
-                    analytics.era_designer_filter(null);
-                    setFilterDesigner(null);
-                    setShowDesignerPanel(false);
-                  }}
-                  className={`w-full text-left px-5 py-3 text-sm transition-colors ${
-                    filterDesigner === null
-                      ? "text-black font-medium bg-gray-50"
-                      : "text-gray-600 hover:bg-gray-50"
-                  }`}
+                  onClick={() => setShowDesignerPanel(false)}
+                  className="w-full py-2.5 bg-black text-white text-sm rounded-full"
                 >
-                  All Designers
+                  {filterDesigners.length === 0 ? "Show All" : `Show Results`}
                 </button>
-                {designersWithEras.map((d) => (
-                  <button
-                    key={d.slug}
-                    onClick={() => {
-                      analytics.era_designer_filter(d.slug);
-                      setFilterDesigner(d.slug);
-                      setShowDesignerPanel(false);
-                    }}
-                    className={`w-full text-left px-5 py-3 text-sm transition-colors ${
-                      filterDesigner === d.slug
-                        ? "text-black font-medium bg-gray-50"
-                        : "text-gray-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    {d.name}
-                  </button>
-                ))}
               </div>
             </motion.div>
           </>

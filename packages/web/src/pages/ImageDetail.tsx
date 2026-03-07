@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { api } from "@/api/client";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Info, Loader2 } from "lucide-react";
+import { ArrowLeft, Info, Loader2, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl, cdnUrl } from "@/utils";
 import SaveButton from "@/components/swankk/SaveButton";
@@ -15,7 +15,7 @@ async function fetchImageTags(url: string): Promise<string[]> {
   return data.tags || [];
 }
 
-const SWIPE_THRESHOLD = 50;
+const SWIPE_THRESHOLD = 40;
 
 export default function ImageDetail() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -28,13 +28,30 @@ export default function ImageDetail() {
   const [currentIdx, setCurrentIdx] = useState(imageIndex);
   const [direction, setDirection] = useState(0);
   const [showInfo, setShowInfo] = useState(false);
+  const [moreImagesLimit, setMoreImagesLimit] = useState(10);
+  const [zoomOpen, setZoomOpen] = useState(false);
   const thumbsRef = useRef<HTMLDivElement>(null);
+  const dragOccurred = useRef(false);
 
   React.useEffect(() => {
     window.scrollTo(0, 0);
     setCurrentIdx(imageIndex);
     setShowInfo(false);
   }, [slug, eraIndex, imageIndex, imageUrl]);
+
+  // Escape key closes zoom
+  useEffect(() => {
+    if (!zoomOpen) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setZoomOpen(false); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [zoomOpen]);
+
+  // Lock body scroll when zoom is open
+  useEffect(() => {
+    document.body.style.overflow = zoomOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [zoomOpen]);
 
   const { data: designers = [], isLoading } = useQuery({
     queryKey: ["designer", slug],
@@ -112,6 +129,12 @@ export default function ImageDetail() {
     );
   }
 
+  const slideVariants = {
+    enter: (dir: number) => ({ x: dir >= 0 ? "100%" : "-100%" }),
+    center: { x: 0 },
+    exit: (dir: number) => ({ x: dir >= 0 ? "-100%" : "100%" }),
+  };
+
   return (
     <div className="min-h-screen pb-20">
       <div className="px-5 md:px-8 pt-6 pb-4">
@@ -134,11 +157,7 @@ export default function ImageDetail() {
             <motion.div
               key={currentIdx}
               custom={direction}
-              variants={{
-                enter: (dir: number) => ({ x: dir >= 0 ? "100%" : "-100%" }),
-                center: { x: 0 },
-                exit: (dir: number) => ({ x: dir >= 0 ? "-100%" : "100%" }),
-              }}
+              variants={slideVariants}
               initial="enter"
               animate="center"
               exit="exit"
@@ -146,11 +165,19 @@ export default function ImageDetail() {
               drag="x"
               dragConstraints={{ left: 0, right: 0 }}
               dragElastic={0.15}
+              dragMomentum={false}
+              onDragStart={() => { dragOccurred.current = true; }}
               onDragEnd={(_, info) => {
-                if (info.offset.x < -SWIPE_THRESHOLD) goTo(currentIdx + 1);
-                else if (info.offset.x > SWIPE_THRESHOLD) goTo(currentIdx - 1);
+                const swipe = Math.abs(info.offset.x) > SWIPE_THRESHOLD || Math.abs(info.velocity.x) > 400;
+                if (swipe) {
+                  if (info.offset.x < 0 || info.velocity.x < -400) goTo(currentIdx + 1);
+                  else goTo(currentIdx - 1);
+                }
+                setTimeout(() => { dragOccurred.current = false; }, 150);
               }}
-              className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing select-none"
+              onClick={() => { if (!dragOccurred.current) setZoomOpen(true); }}
+              className="absolute inset-0 w-full h-full cursor-pointer select-none"
+              style={{ touchAction: 'pan-y' }}
             >
               <img
                 src={cdnUrl(currentImageUrl)}
@@ -195,6 +222,7 @@ export default function ImageDetail() {
             <button
               key={i}
               onClick={() => goTo(i)}
+              style={{ touchAction: 'manipulation' }}
               className={`flex-shrink-0 w-10 h-14 rounded-md overflow-hidden transition-all duration-200 ${
                 i === currentIdx
                   ? "ring-1 ring-gray-400 ring-offset-1 opacity-100"
@@ -241,37 +269,42 @@ export default function ImageDetail() {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 mb-4">
-          <Link
-            to={createPageUrl(`DesignerWorld?slug=${designer.slug}`)}
-            className="px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-full text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-          >
-            {designer.name}
-          </Link>
-          {(designer.known_for_tags || []).map((tag: any, i: number) => (
-            <Link
-              key={i}
-              to={createPageUrl(`TagDiscovery?tag=${encodeURIComponent(tag.name || tag)}`)}
-              className="px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-full text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-            >
-              {tag.name || tag}
-            </Link>
-          ))}
-        </div>
-
-        {(imageTags as string[]).length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-8">
-            {(imageTags as string[]).map((tag: string, i: number) => (
+        {(() => {
+          const knownTagNames = new Set<string>(
+            (designer.known_for_tags || []).map((tag: any) => (tag.name || tag).toLowerCase())
+          );
+          const uniqueImageTags = Array.from(
+            new Set((imageTags as string[]).filter((tag) => !knownTagNames.has(tag.toLowerCase())))
+          );
+          return (
+            <div className="flex flex-wrap gap-2 mb-4">
               <Link
-                key={i}
-                to={createPageUrl(`TagDiscovery?tag=${encodeURIComponent(tag)}`)}
-                className="px-3 py-1.5 bg-black/5 border border-black/10 rounded-full text-sm text-gray-800 hover:bg-black/10 transition-colors"
+                to={createPageUrl(`DesignerWorld?slug=${designer.slug}`)}
+                className="px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-full text-sm text-gray-700 hover:bg-gray-100 transition-colors"
               >
-                {tag}
+                {designer.name}
               </Link>
-            ))}
-          </div>
-        )}
+              {(designer.known_for_tags || []).map((tag: any, i: number) => (
+                <Link
+                  key={i}
+                  to={createPageUrl(`TagDiscovery?tag=${encodeURIComponent(tag.name || tag)}`)}
+                  className="px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-full text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  {tag.name || tag}
+                </Link>
+              ))}
+              {uniqueImageTags.map((tag: string, i: number) => (
+                <Link
+                  key={`img-${i}`}
+                  to={createPageUrl(`TagDiscovery?tag=${encodeURIComponent(tag)}`)}
+                  className="px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-full text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  {tag}
+                </Link>
+              ))}
+            </div>
+          );
+        })()}
       </div>
 
       {/* More from designer (other eras) */}
@@ -281,7 +314,7 @@ export default function ImageDetail() {
             More of {designer.name}
           </p>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-2xl mx-auto">
-            {otherEraImages.slice(0, 9).map((img: any, index: number) => (
+            {otherEraImages.slice(0, moreImagesLimit).map((img: any, index: number) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
@@ -301,8 +334,95 @@ export default function ImageDetail() {
               </motion.div>
             ))}
           </div>
+          {otherEraImages.length > moreImagesLimit && (
+            <div className="flex justify-center mt-6">
+              <button
+                onClick={() => setMoreImagesLimit((v) => v + 10)}
+                className="px-6 py-2.5 border border-gray-200 rounded-full text-sm text-gray-600 hover:border-gray-400 transition-colors"
+              >
+                Show more
+              </button>
+            </div>
+          )}
         </div>
       )}
+
+      {/* Zoom modal */}
+      <AnimatePresence>
+        {zoomOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[100] bg-black flex items-center justify-center"
+            onClick={() => setZoomOpen(false)}
+          >
+            {/* X button */}
+            <button
+              onClick={(e) => { e.stopPropagation(); setZoomOpen(false); }}
+              className="absolute top-4 right-4 z-10 p-2 text-white/70 hover:text-white transition-colors"
+            >
+              <X className="w-6 h-6" strokeWidth={1.5} />
+            </button>
+
+            {/* Navigation arrows */}
+            {currentIdx > 0 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); goTo(currentIdx - 1); }}
+                className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/60 text-white transition-colors"
+              >
+                <span className="text-2xl font-thin leading-none">‹</span>
+              </button>
+            )}
+            {currentIdx < eraImages.length - 1 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); goTo(currentIdx + 1); }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/60 text-white transition-colors"
+              >
+                <span className="text-2xl font-thin leading-none">›</span>
+              </button>
+            )}
+
+            {/* Swipeable image */}
+            <AnimatePresence initial={false} custom={direction} mode="popLayout">
+              <motion.img
+                key={`zoom-${currentIdx}`}
+                src={cdnUrl(currentImageUrl)}
+                alt={`${era.title} ${currentIdx + 1}`}
+                custom={direction}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.25 }}
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.15}
+                dragMomentum={false}
+                onDragEnd={(_, info) => {
+                  const swipe = Math.abs(info.offset.x) > SWIPE_THRESHOLD || Math.abs(info.velocity.x) > 400;
+                  if (swipe) {
+                    if (info.offset.x < 0 || info.velocity.x < -400) goTo(currentIdx + 1);
+                    else goTo(currentIdx - 1);
+                  }
+                }}
+                onClick={(e) => e.stopPropagation()}
+                className="max-h-screen max-w-full object-contain select-none cursor-grab active:cursor-grabbing"
+                style={{ touchAction: 'pan-y' }}
+                draggable={false}
+              />
+            </AnimatePresence>
+
+            {/* Counter */}
+            {eraImages.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/50 text-xs">
+                {currentIdx + 1} / {eraImages.length}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

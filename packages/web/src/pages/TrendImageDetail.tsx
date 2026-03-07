@@ -2,13 +2,13 @@ import React, { useState, useRef, useEffect } from "react";
 import { api } from "@/api/client";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Info } from "lucide-react";
+import { ArrowLeft, Info, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl, cdnUrl } from "@/utils";
 import SaveButton from "@/components/swankk/SaveButton";
 import ImageWithSkeleton from "@/components/swankk/ImageWithSkeleton";
 
-async function fetchSimilar(imageUrl: string, limit = 12) {
+async function fetchSimilar(imageUrl: string, limit = 24) {
   const res = await fetch(`/api/images/similar?url=${encodeURIComponent(imageUrl)}&limit=${limit}`);
   if (!res.ok) return [];
   const data = await res.json() as { images: any[] };
@@ -22,7 +22,7 @@ function similarImageNav(img: any): string {
   return createPageUrl("Home");
 }
 
-const SWIPE_THRESHOLD = 50;
+const SWIPE_THRESHOLD = 40;
 
 export default function TrendImageDetail() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -34,7 +34,10 @@ export default function TrendImageDetail() {
   const [currentIdx, setCurrentIdx] = useState(imageIndex);
   const [direction, setDirection] = useState(0);
   const [showInfo, setShowInfo] = useState(false);
+  const [similarLimit, setSimilarLimit] = useState(10);
+  const [zoomOpen, setZoomOpen] = useState(false);
   const thumbsRef = useRef<HTMLDivElement>(null);
+  const dragOccurred = useRef(false);
 
   React.useEffect(() => {
     window.scrollTo(0, 0);
@@ -42,9 +45,28 @@ export default function TrendImageDetail() {
     setShowInfo(false);
   }, [trendSlug, imageIndex, imageUrl]);
 
+  // Escape key closes zoom
+  useEffect(() => {
+    if (!zoomOpen) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setZoomOpen(false); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [zoomOpen]);
+
+  // Lock body scroll when zoom is open
+  useEffect(() => {
+    document.body.style.overflow = zoomOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [zoomOpen]);
+
   const { data: trends = [], isLoading } = useQuery({
     queryKey: ["trend", trendSlug],
     queryFn: () => api.trends.filter({ slug: trendSlug }),
+  });
+
+  const { data: allStyles = [] } = useQuery({
+    queryKey: ["styles"],
+    queryFn: () => api.styles.list(),
   });
 
   const trend = (trends as any[])[0];
@@ -101,6 +123,24 @@ export default function TrendImageDetail() {
 
   const imageBookmarkId = `trend_${trendSlug}_${currentIdx}`;
 
+  const slideVariants = {
+    enter: (dir: number) => ({ x: dir >= 0 ? "100%" : "-100%" }),
+    center: { x: 0 },
+    exit: (dir: number) => ({ x: dir >= 0 ? "-100%" : "100%" }),
+  };
+
+  const trendSimilarImages = (similarImages as any[]).filter((img: any) => img.entity_type === "trend");
+
+  // Style keywords from trend's related_tags
+  const styleKeywords = (trend.related_tags || [])
+    .filter((t: string) => t.startsWith('style:'))
+    .map((entry: string) => {
+      const styleSlug = entry.slice('style:'.length);
+      const style = (allStyles as any[]).find((s: any) => s.slug === styleSlug);
+      return style ? { slug: styleSlug, name: style.name } : null;
+    })
+    .filter(Boolean);
+
   return (
     <div className="pb-20">
       <div className="px-5 md:px-8 pt-6">
@@ -128,11 +168,7 @@ export default function TrendImageDetail() {
                 src={cdnUrl(currentImage)}
                 alt={trend.name}
                 custom={direction}
-                variants={{
-                  enter: (dir: number) => ({ x: dir >= 0 ? "100%" : "-100%" }),
-                  center: { x: 0 },
-                  exit: (dir: number) => ({ x: dir >= 0 ? "-100%" : "100%" }),
-                }}
+                variants={slideVariants}
                 initial="enter"
                 animate="center"
                 exit="exit"
@@ -140,11 +176,19 @@ export default function TrendImageDetail() {
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={0.15}
+                dragMomentum={false}
+                onDragStart={() => { dragOccurred.current = true; }}
                 onDragEnd={(_, info) => {
-                  if (info.offset.x < -SWIPE_THRESHOLD) goTo(currentIdx + 1);
-                  else if (info.offset.x > SWIPE_THRESHOLD) goTo(currentIdx - 1);
+                  const swipe = Math.abs(info.offset.x) > SWIPE_THRESHOLD || Math.abs(info.velocity.x) > 400;
+                  if (swipe) {
+                    if (info.offset.x < 0 || info.velocity.x < -400) goTo(currentIdx + 1);
+                    else goTo(currentIdx - 1);
+                  }
+                  setTimeout(() => { dragOccurred.current = false; }, 150);
                 }}
-                className="absolute inset-0 w-full h-full object-cover cursor-grab active:cursor-grabbing select-none"
+                onClick={() => { if (!dragOccurred.current) setZoomOpen(true); }}
+                className="absolute inset-0 w-full h-full object-cover cursor-pointer select-none"
+                style={{ touchAction: 'pan-y' }}
               />
             </AnimatePresence>
 
@@ -179,6 +223,7 @@ export default function TrendImageDetail() {
                 <button
                   key={i}
                   onClick={() => goTo(i)}
+                  style={{ touchAction: 'manipulation' }}
                   className={`flex-shrink-0 w-10 h-14 rounded-md overflow-hidden transition-all duration-200 ${
                     i === currentIdx
                       ? "ring-1 ring-gray-400 ring-offset-1 opacity-100"
@@ -222,17 +267,32 @@ export default function TrendImageDetail() {
               )}
             </div>
           </div>
+
+          {/* Style keywords */}
+          {styleKeywords.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {styleKeywords.map((style: any) => (
+                <Link
+                  key={style.slug}
+                  to={createPageUrl(`TagDiscovery?slug=${style.slug}`)}
+                  className="px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-full text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  {style.name}
+                </Link>
+              ))}
+            </div>
+          )}
         </motion.div>
       </div>
 
       {/* Similar images */}
-      {(similarImages as any[]).some((img: any) => img.entity_type === "trend") && (
+      {trendSimilarImages.length > 0 && (
         <div className="px-5 md:px-8 border-t border-gray-100 pt-8">
           <p className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium mb-4">
             You may also like
           </p>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-2xl mx-auto">
-            {(similarImages as any[]).filter((img: any) => img.entity_type === "trend").map((img: any, i: number) => (
+            {trendSimilarImages.slice(0, similarLimit).map((img: any, i: number) => (
               <motion.div
                 key={img.url_hash}
                 initial={{ opacity: 0, y: 20 }}
@@ -251,8 +311,95 @@ export default function TrendImageDetail() {
               </motion.div>
             ))}
           </div>
+          {trendSimilarImages.length > similarLimit && (
+            <div className="flex justify-center mt-6">
+              <button
+                onClick={() => setSimilarLimit((v) => v + 10)}
+                className="px-6 py-2.5 border border-gray-200 rounded-full text-sm text-gray-600 hover:border-gray-400 transition-colors"
+              >
+                Show more
+              </button>
+            </div>
+          )}
         </div>
       )}
+
+      {/* Zoom modal */}
+      <AnimatePresence>
+        {zoomOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[100] bg-black flex items-center justify-center"
+            onClick={() => setZoomOpen(false)}
+          >
+            {/* X button */}
+            <button
+              onClick={(e) => { e.stopPropagation(); setZoomOpen(false); }}
+              className="absolute top-4 right-4 z-10 p-2 text-white/70 hover:text-white transition-colors"
+            >
+              <X className="w-6 h-6" strokeWidth={1.5} />
+            </button>
+
+            {/* Navigation arrows */}
+            {currentIdx > 0 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); goTo(currentIdx - 1); }}
+                className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/60 text-white transition-colors"
+              >
+                <span className="text-2xl font-thin leading-none">‹</span>
+              </button>
+            )}
+            {currentIdx < images.length - 1 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); goTo(currentIdx + 1); }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/60 text-white transition-colors"
+              >
+                <span className="text-2xl font-thin leading-none">›</span>
+              </button>
+            )}
+
+            {/* Swipeable image */}
+            <AnimatePresence initial={false} custom={direction} mode="popLayout">
+              <motion.img
+                key={`zoom-${currentIdx}`}
+                src={cdnUrl(currentImage)}
+                alt={trend.name}
+                custom={direction}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.25 }}
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.15}
+                dragMomentum={false}
+                onDragEnd={(_, info) => {
+                  const swipe = Math.abs(info.offset.x) > SWIPE_THRESHOLD || Math.abs(info.velocity.x) > 400;
+                  if (swipe) {
+                    if (info.offset.x < 0 || info.velocity.x < -400) goTo(currentIdx + 1);
+                    else goTo(currentIdx - 1);
+                  }
+                }}
+                onClick={(e) => e.stopPropagation()}
+                className="max-h-screen max-w-full object-contain select-none cursor-grab active:cursor-grabbing"
+                style={{ touchAction: 'pan-y' }}
+                draggable={false}
+              />
+            </AnimatePresence>
+
+            {/* Counter */}
+            {images.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/50 text-xs">
+                {currentIdx + 1} / {images.length}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
