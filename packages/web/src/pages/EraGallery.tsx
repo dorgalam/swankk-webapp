@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { api } from "@/api/client";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -13,6 +13,7 @@ export default function EraGallery() {
   const slug = urlParams.get("slug") || "";
   const eraIndex = parseInt(urlParams.get("era") || "0");
   const navigate = useNavigate();
+  const [moreLimit, setMoreLimit] = useState(10);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -142,7 +143,7 @@ export default function EraGallery() {
             More of {designer.name}
           </p>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {allDesignerImages.slice(0, 9).map((img: any, index: number) => (
+            {allDesignerImages.slice(0, moreLimit).map((img: any, index: number) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
@@ -159,6 +160,16 @@ export default function EraGallery() {
               </motion.div>
             ))}
           </div>
+          {allDesignerImages.length > moreLimit && (
+            <div className="flex justify-center mt-6">
+              <button
+                onClick={() => setMoreLimit((v) => v + 10)}
+                className="px-6 py-2.5 border border-gray-200 rounded-full text-sm text-gray-600 hover:border-gray-400 transition-colors"
+              >
+                Show more
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

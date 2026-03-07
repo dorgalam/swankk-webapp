@@ -246,6 +246,42 @@ export default function TagDiscovery() {
           </motion.section>
         )}
 
+        {(() => {
+          const matchingTrends = (allTrends as any[]).filter((t: any) =>
+            currentStyle && (t.related_tags || []).includes(`style:${currentStyle.slug}`)
+          );
+          if (!matchingTrends.length) return null;
+          return (
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35 }}
+            >
+              <h2 className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium mb-4">
+                Trends
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {matchingTrends.map((trend: any) => (
+                  <Link
+                    key={trend.slug}
+                    to={createPageUrl(`TrendDetail?slug=${trend.slug}`)}
+                    className="group"
+                  >
+                    <div className="aspect-[3/4] rounded-xl overflow-hidden mb-2 relative">
+                      <ImageWithSkeleton
+                        src={cdnUrl((trend.preview_images || [])[0])}
+                        alt={trend.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    </div>
+                    <p className="text-sm font-medium text-black">{trend.name}</p>
+                  </Link>
+                ))}
+              </div>
+            </motion.section>
+          );
+        })()}
+
         {matchingDesigners.length === 0 && (
           <div className="text-center py-12">
             <p className="text-gray-400 mb-4">No content found for this tag yet</p>

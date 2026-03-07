@@ -141,15 +141,13 @@ if (!hasSeenLanding) {
       </AnimatePresence>
 
       <div className="px-5 md:px-8 py-8 pb-20">
-        {userTaste && userTaste.length > 0 && (
-          <button
-            onClick={() => setShowEditModal(true)}
-            className="mb-6 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 text-xs text-gray-600 hover:border-gray-400 hover:text-black transition-colors group"
-          >
-            <span>Tuned to: {userTaste.join(" • ")}</span>
-            <Pencil className="w-3 h-3 text-gray-400 group-hover:text-black transition-colors" strokeWidth={1.5} />
-          </button>
-        )}
+        <button
+          onClick={() => setShowEditModal(true)}
+          className="mb-6 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 text-xs text-gray-600 hover:border-gray-400 hover:text-black transition-colors group"
+        >
+          <Pencil className="w-3 h-3 text-gray-400 group-hover:text-black transition-colors" strokeWidth={1.5} />
+          <span>{userTaste && userTaste.length > 0 ? "Edit your taste" : "Personalize your taste"}</span>
+        </button>
 
         <motion.div
           initial={{ opacity: 0, y: 10 }}

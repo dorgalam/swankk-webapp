@@ -252,7 +252,7 @@ export default function ImageDetail() {
                   onClick={() => setShowInfo((v) => !v)}
                   className="flex-shrink-0 p-0.5 rounded-full hover:bg-gray-100 transition-colors"
                 >
-                  <Info className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.5} />
+                  <Info className="w-5 h-5 text-gray-400" strokeWidth={1.5} />
                 </button>
               )}
             </div>
