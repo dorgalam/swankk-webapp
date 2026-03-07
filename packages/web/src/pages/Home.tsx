@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { api } from "@/api/client";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { createPageUrl, cdnUrl } from "@/utils";
+import { createPageUrl, cdnUrl, shuffle } from "@/utils";
 import TasteOnboarding from "@/components/swankk/TasteOnboarding";
 import TasteEditModal from "@/components/swankk/TasteEditModal";
 import { Pencil } from "lucide-react";
@@ -79,27 +79,37 @@ export default function Home() {
     }));
   });
 
-  const getFilteredContent = () => {
-    const trendsList = trends as any[];
+  // Shuffle once per data load — changes on every page refresh, stable within session
+  const shuffledTrends = useMemo(() => shuffle([...(trends as any[])]), [trends]);
+  const shuffledEras = useMemo(() => shuffle([...allEras.filter((e: any) => (e.images?.length ?? 0) > 0)]), [allDesigners]);
 
+  const getFilteredContent = () => {
     if (!userTaste || userTaste.length === 0) {
       return {
-        trends: trendsList.slice(0, 3),
-        eras: allEras.slice(0, 6),
+        trends: shuffledTrends.slice(0, 3),
+        eras: shuffledEras.slice(0, 6),
       };
     }
 
-    // Match taste selection to designer names
-    const selectedDesignerSlugs = (allDesigners as any[])
-      .filter((d: any) => userTaste.some((house) => d.name?.toLowerCase().includes(house.toLowerCase())))
-      .map((d: any) => d.slug);
+    // Match taste selection to designer objects
+    const selectedDesigners = (allDesigners as any[]).filter((d: any) =>
+      userTaste.some((house) => d.name?.toLowerCase().includes(house.toLowerCase()))
+    );
+    const selectedDesignerSlugs = selectedDesigners.map((d: any) => d.slug);
+
+    // Find trends linked to selected designers via designer_slugs field
+    const tasteTrends = shuffledTrends.filter((t: any) =>
+      (t.designer_slugs || []).some((slug: string) => selectedDesignerSlugs.includes(slug))
+    );
+    // Fall back to all shuffled trends if none match
+    const displayTrends = tasteTrends.length > 0 ? tasteTrends.slice(0, 3) : shuffledTrends.slice(0, 3);
 
     const relevantEras = selectedDesignerSlugs.length > 0
-      ? allEras.filter((era: any) => selectedDesignerSlugs.includes(era.designer?.slug))
-      : allEras;
+      ? shuffledEras.filter((era: any) => selectedDesignerSlugs.includes(era.designer?.slug))
+      : shuffledEras;
 
     return {
-      trends: trendsList.slice(0, 3),
+      trends: displayTrends,
       eras: relevantEras.slice(0, 6),
     };
   };
@@ -141,14 +151,6 @@ if (!hasSeenLanding) {
       </AnimatePresence>
 
       <div className="px-5 md:px-8 py-8 pb-20">
-        <button
-          onClick={() => setShowEditModal(true)}
-          className="mb-6 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 text-xs text-gray-600 hover:border-gray-400 hover:text-black transition-colors group"
-        >
-          <Pencil className="w-3 h-3 text-gray-400 group-hover:text-black transition-colors" strokeWidth={1.5} />
-          <span>{userTaste && userTaste.length > 0 ? "Edit your taste" : "Personalize your taste"}</span>
-        </button>
-
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -158,9 +160,16 @@ if (!hasSeenLanding) {
           <h1 className="font-serif text-4xl md:text-5xl font-medium text-black mb-2">
             The Fashion Index
           </h1>
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-gray-400 mb-4">
             Trends to save. Eras to understand.
           </p>
+          <button
+            onClick={() => setShowEditModal(true)}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 text-xs text-gray-600 hover:border-gray-400 hover:text-black transition-colors group"
+          >
+            <Pencil className="w-3 h-3 text-gray-400 group-hover:text-black transition-colors" strokeWidth={1.5} />
+            <span>Refine your taste</span>
+          </button>
         </motion.div>
 
         {filteredTrends.length > 0 && (
@@ -217,8 +226,7 @@ if (!hasSeenLanding) {
             </p>
 
             <div className="space-y-10">
-              {filteredEras.filter((era: any) => (era.images?.length ?? 0) > 0)
-              .map((era: any) => {
+              {filteredEras.map((era: any) => {
                 const eraImages: string[] = era.images || [];
 
                 return (

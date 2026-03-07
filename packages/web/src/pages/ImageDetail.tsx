@@ -15,19 +15,6 @@ async function fetchImageTags(url: string): Promise<string[]> {
   return data.tags || [];
 }
 
-async function fetchSimilar(imageUrl: string, limit = 24) {
-  const res = await fetch(`/api/images/similar?url=${encodeURIComponent(imageUrl)}&limit=${limit}`);
-  if (!res.ok) return [];
-  const data = await res.json() as { images: any[] };
-  return data.images || [];
-}
-
-function similarImageNav(img: any): string {
-  if (img.entity_type === "trend") return createPageUrl(`TrendImageDetail?trendSlug=${img.entity_slug}&imageUrl=${encodeURIComponent(img.url)}`);
-  if (img.entity_type === "designer") return createPageUrl(`ImageDetail?slug=${img.entity_slug}&imageUrl=${encodeURIComponent(img.url)}`);
-  return createPageUrl("Home");
-}
-
 const SWIPE_THRESHOLD = 40;
 
 export default function ImageDetail() {
@@ -42,7 +29,6 @@ export default function ImageDetail() {
   const [direction, setDirection] = useState(0);
   const [showInfo, setShowInfo] = useState(false);
   const [moreImagesLimit, setMoreImagesLimit] = useState(10);
-  const [similarLimit, setSimilarLimit] = useState(10);
   const [zoomOpen, setZoomOpen] = useState(false);
   const thumbsRef = useRef<HTMLDivElement>(null);
   const dragOccurred = useRef(false);
@@ -119,13 +105,6 @@ export default function ImageDetail() {
     queryKey: ["imageTags", currentImageUrl],
     queryFn: () => fetchImageTags(cdnUrl(currentImageUrl)),
     enabled: !!currentImageUrl,
-  });
-
-  const currentCdnUrl = currentImageUrl ? cdnUrl(currentImageUrl) : "";
-  const { data: similarImages = [] } = useQuery({
-    queryKey: ["similar", currentCdnUrl],
-    queryFn: () => fetchSimilar(currentCdnUrl),
-    enabled: !!currentCdnUrl,
   });
 
   if (isLoading) {
@@ -327,43 +306,6 @@ export default function ImageDetail() {
           );
         })()}
       </div>
-
-      {/* You may also like — similar images */}
-      {(similarImages as any[]).length > 0 && (
-        <div className="px-5 md:px-8 border-t border-gray-100 pt-8">
-          <p className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium mb-4">
-            You may also like
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-2xl mx-auto">
-            {(similarImages as any[]).slice(0, similarLimit).map((img: any, i: number) => (
-              <motion.div
-                key={img.url_hash || i}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.03 }}
-                className="aspect-[3/4] rounded-xl overflow-hidden cursor-pointer group relative"
-                onClick={() => navigate(similarImageNav(img))}
-              >
-                <ImageWithSkeleton
-                  src={cdnUrl(img.url)}
-                  alt={img.entity_slug}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-              </motion.div>
-            ))}
-          </div>
-          {(similarImages as any[]).length > similarLimit && (
-            <div className="flex justify-center mt-6">
-              <button
-                onClick={() => setSimilarLimit((v) => v + 10)}
-                className="px-6 py-2.5 border border-gray-200 rounded-full text-sm text-gray-600 hover:border-gray-400 transition-colors"
-              >
-                Show more
-              </button>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* More from designer (other eras) */}
       {otherEraImages.length > 0 && (
