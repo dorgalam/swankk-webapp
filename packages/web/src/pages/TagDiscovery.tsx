@@ -10,6 +10,18 @@ import SaveButton from "@/components/swankk/SaveButton";
 import ImageWithSkeleton from "@/components/swankk/ImageWithSkeleton";
 import { productBookmarkId } from "@/lib/bookmarks";
 
+async function fetchImagesByTag(tag: string, limit = 24) {
+  const res = await fetch(`/api/images/by-tag?tag=${encodeURIComponent(tag)}&limit=${limit}`);
+  if (!res.ok) return [];
+  const data = await res.json() as { images: any[] };
+  return data.images || [];
+}
+
+function tagImageNav(img: any): string {
+  if (img.entity_type === "trend") return createPageUrl(`TrendImageDetail?trendSlug=${img.entity_slug}&imageUrl=${encodeURIComponent(img.url)}`);
+  return createPageUrl(`ImageDetail?slug=${img.entity_slug}&imageUrl=${encodeURIComponent(img.url)}`);
+}
+
 export default function TagDiscovery() {
   const urlParams = new URLSearchParams(window.location.search);
   const tagSlug = urlParams.get("slug");
@@ -28,6 +40,14 @@ export default function TagDiscovery() {
   const { data: allTrends = [] } = useQuery({
     queryKey: ["trends"],
     queryFn: () => api.trends.list(),
+  });
+
+  // Fetch images directly tagged with this style name (fallback for styles
+  // not tied to any designer's known_for_tags)
+  const { data: taggedImages = [] } = useQuery({
+    queryKey: ["imagesByTag", tagName],
+    queryFn: () => fetchImagesByTag(tagName!),
+    enabled: !!tagName,
   });
 
   // Support both ?tag=Name (legacy) and ?slug=slug (new)
@@ -192,70 +212,60 @@ export default function TagDiscovery() {
           );
         })()}
 
-        {matchingDesigners.length > 0 && (() => {
-          // Build a STABLE sorted pool (designer slug → era index → image index)
-          // so the seeded shuffle produces deterministic, slug-specific results.
-          // Two styles sharing the same designer pool will show different images
-          // because their slugs produce different seed hashes.
-          const seed = tagSlug || tagName || "";
-          let h = 0;
-          for (let i = 0; i < seed.length; i++) h = (Math.imul(31, h) + seed.charCodeAt(i)) | 0;
-
-          const stablePool = [...matchingDesigners]
-            .sort((a: any, b: any) => a.slug.localeCompare(b.slug))
-            .flatMap((designer: any) =>
-              (designer.eras || []).flatMap((era: any, eraIdx: number) =>
-                (era.images || []).map((imgUrl: string, imgIdx: number) => ({
-                  imgUrl,
-                  designerSlug: designer.slug,
-                  eraIndex: eraIdx,
-                  imageIndex: imgIdx,
-                }))
-              )
+        {(() => {
+          // Designer-based gallery: stable sorted pool + slug-seeded shuffle
+          if (matchingDesigners.length > 0) {
+            const seed = tagSlug || tagName || "";
+            let h = 0;
+            for (let i = 0; i < seed.length; i++) h = (Math.imul(31, h) + seed.charCodeAt(i)) | 0;
+            const stablePool = [...matchingDesigners]
+              .sort((a: any, b: any) => a.slug.localeCompare(b.slug))
+              .flatMap((designer: any) =>
+                (designer.eras || []).flatMap((era: any, eraIdx: number) =>
+                  (era.images || []).map((imgUrl: string, imgIdx: number) => ({
+                    imgUrl, designerSlug: designer.slug, eraIndex: eraIdx, imageIndex: imgIdx,
+                  }))
+                )
+              );
+            const seeded = [...stablePool];
+            for (let i = seeded.length - 1; i > 0; i--) {
+              h = (Math.imul(1664525, h) + 1013904223) | 0;
+              const j = Math.abs(h) % (i + 1);
+              [seeded[i], seeded[j]] = [seeded[j], seeded[i]];
+            }
+            const gallery = seeded.slice(0, 12);
+            if (gallery.length > 0) return (
+              <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                <h2 className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium mb-4">Visual Gallery</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                  {gallery.map((item: any, i: number) => (
+                    <div key={i} className="aspect-[3/4] rounded-lg overflow-hidden cursor-pointer group relative"
+                      onClick={() => navigate(createPageUrl(`ImageDetail?slug=${item.designerSlug}&era=${item.eraIndex}&image=${item.imageIndex}`))}>
+                      <ImageWithSkeleton src={cdnUrl(item.imgUrl)} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    </div>
+                  ))}
+                </div>
+              </motion.section>
             );
-
-          const seeded = [...stablePool];
-          for (let i = seeded.length - 1; i > 0; i--) {
-            h = (Math.imul(1664525, h) + 1013904223) | 0;
-            const j = Math.abs(h) % (i + 1);
-            [seeded[i], seeded[j]] = [seeded[j], seeded[i]];
           }
 
-          const gallery = seeded.slice(0, 12);
-          if (!gallery.length) return null;
-
-          return (
-            <motion.section
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <h2 className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium mb-4">
-                Visual Gallery
-              </h2>
+          // Fallback: images tagged directly in image_tags DB
+          const tagged = taggedImages as any[];
+          if (tagged.length > 0) return (
+            <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+              <h2 className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium mb-4">Visual Gallery</h2>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                {gallery.map((item: any, i: number) => (
-                  <div
-                    key={i}
-                    className="aspect-[3/4] rounded-lg overflow-hidden cursor-pointer group relative"
-                    onClick={() =>
-                      navigate(
-                        createPageUrl(
-                          `ImageDetail?slug=${item.designerSlug}&era=${item.eraIndex}&image=${item.imageIndex}`
-                        )
-                      )
-                    }
-                  >
-                    <ImageWithSkeleton
-                      src={cdnUrl(item.imgUrl)}
-                      alt=""
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
+                {tagged.map((img: any, i: number) => (
+                  <div key={img.url_hash || i} className="aspect-[3/4] rounded-lg overflow-hidden cursor-pointer group relative"
+                    onClick={() => navigate(tagImageNav(img))}>
+                    <ImageWithSkeleton src={cdnUrl(img.url)} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   </div>
                 ))}
               </div>
             </motion.section>
           );
+
+          return null;
         })()}
 
         {allSignaturePieces.length > 0 && (
@@ -304,7 +314,7 @@ export default function TagDiscovery() {
           </motion.section>
         )}
 
-        {matchingDesigners.length === 0 && (
+        {matchingDesigners.length === 0 && (taggedImages as any[]).length === 0 && (
           <div className="text-center py-12">
             <p className="text-gray-400 mb-4">No content found for this tag yet</p>
             <Link to={createPageUrl("Home")} className="text-sm text-black underline">
