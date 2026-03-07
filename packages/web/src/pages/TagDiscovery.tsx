@@ -192,25 +192,38 @@ export default function TagDiscovery() {
           );
         })()}
 
-        {allEras.length > 0 && (() => {
-          // Seeded shuffle so different slugs with the same designer pool show different images
+        {matchingDesigners.length > 0 && (() => {
+          // Build a STABLE sorted pool (designer slug → era index → image index)
+          // so the seeded shuffle produces deterministic, slug-specific results.
+          // Two styles sharing the same designer pool will show different images
+          // because their slugs produce different seed hashes.
           const seed = tagSlug || tagName || "";
           let h = 0;
           for (let i = 0; i < seed.length; i++) h = (Math.imul(31, h) + seed.charCodeAt(i)) | 0;
-          const allImgs = allEras.flatMap((era: any) =>
-            (era.images || []).map((imgUrl: string, imgIdx: number) => ({
-              imgUrl,
-              designerSlug: era.designer_slug,
-              eraIndex: era.eraIndex,
-              imageIndex: imgIdx,
-            }))
-          );
-          const seeded = [...allImgs];
+
+          const stablePool = [...matchingDesigners]
+            .sort((a: any, b: any) => a.slug.localeCompare(b.slug))
+            .flatMap((designer: any) =>
+              (designer.eras || []).flatMap((era: any, eraIdx: number) =>
+                (era.images || []).map((imgUrl: string, imgIdx: number) => ({
+                  imgUrl,
+                  designerSlug: designer.slug,
+                  eraIndex: eraIdx,
+                  imageIndex: imgIdx,
+                }))
+              )
+            );
+
+          const seeded = [...stablePool];
           for (let i = seeded.length - 1; i > 0; i--) {
             h = (Math.imul(1664525, h) + 1013904223) | 0;
             const j = Math.abs(h) % (i + 1);
             [seeded[i], seeded[j]] = [seeded[j], seeded[i]];
           }
+
+          const gallery = seeded.slice(0, 12);
+          if (!gallery.length) return null;
+
           return (
             <motion.section
               initial={{ opacity: 0, y: 20 }}
@@ -221,7 +234,7 @@ export default function TagDiscovery() {
                 Visual Gallery
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                {seeded.slice(0, 12).map((item: any, i: number) => (
+                {gallery.map((item: any, i: number) => (
                   <div
                     key={i}
                     className="aspect-[3/4] rounded-lg overflow-hidden cursor-pointer group relative"
