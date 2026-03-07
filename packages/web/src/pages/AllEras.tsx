@@ -145,9 +145,9 @@ export default function AllEras() {
             <SlidersHorizontal className="w-3 h-3" strokeWidth={1.5} />
             {filterDesigners.length === 0
               ? "Filter by Designer"
-              : filterDesigners.length === 1
-              ? designersWithEras.find((d) => d.slug === filterDesigners[0])?.name
-              : `${filterDesigners.length} Designers`}
+              : filterDesigners.length <= 2
+              ? filterDesigners.map((s) => designersWithEras.find((d) => d.slug === s)?.name).join(" · ")
+              : `${filterDesigners.map((s) => designersWithEras.find((d) => d.slug === s)?.name).slice(0, 2).join(" · ")} +${filterDesigners.length - 2}`}
           </button>
         </div>
       </div>
