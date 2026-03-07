@@ -37,6 +37,7 @@ export default function AllEras() {
   const navigate = useNavigate();
   const [filterDecade, setFilterDecade] = useState<string | null>(null);
   const [filterDesigners, setFilterDesigners] = useState<string[]>([]);
+  const [showYearPanel, setShowYearPanel] = useState(false);
   const [showDesignerPanel, setShowDesignerPanel] = useState(false);
 
   const { data: allDesigners = [], isLoading, isError, refetch } = useQuery({
@@ -104,35 +105,19 @@ export default function AllEras() {
           Eras
         </motion.h1>
 
-        {/* Decade filter + designer filter toggle */}
-        <div className="space-y-3">
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => { analytics.era_decade_filter(null); setFilterDecade(null); }}
-              style={{ touchAction: 'manipulation' }}
-              className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
-                filterDecade === null
-                  ? "bg-black text-white border-black"
-                  : "border-gray-200 text-gray-600 hover:border-gray-400"
-              }`}
-            >
-              All Years
-            </button>
-            {decades.map((decade) => (
-              <button
-                key={decade}
-                onClick={() => { const next = filterDecade === decade ? null : decade; analytics.era_decade_filter(next); setFilterDecade(next); }}
-                style={{ touchAction: 'manipulation' }}
-                className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
-                  filterDecade === decade
-                    ? "bg-black text-white border-black"
-                    : "border-gray-200 text-gray-600 hover:border-gray-400"
-                }`}
-              >
-                {decade}
-              </button>
-            ))}
-          </div>
+        {/* Filter buttons */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowYearPanel(true)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border transition-colors ${
+              filterDecade
+                ? "bg-black text-white border-black"
+                : "border-gray-200 text-gray-600 hover:border-gray-400"
+            }`}
+          >
+            <SlidersHorizontal className="w-3 h-3" strokeWidth={1.5} />
+            {filterDecade ? `${filterDecade}` : "Year"}
+          </button>
 
           <button
             onClick={() => setShowDesignerPanel(true)}
@@ -144,7 +129,7 @@ export default function AllEras() {
           >
             <SlidersHorizontal className="w-3 h-3" strokeWidth={1.5} />
             {filterDesigners.length === 0
-              ? "Filter by Designer"
+              ? "Designer"
               : filterDesigners.length <= 2
               ? filterDesigners.map((s) => designersWithEras.find((d) => d.slug === s)?.name).join(" · ")
               : `${filterDesigners.map((s) => designersWithEras.find((d) => d.slug === s)?.name).slice(0, 2).join(" · ")} +${filterDesigners.length - 2}`}
@@ -211,6 +196,71 @@ export default function AllEras() {
           <p className="text-sm text-gray-400 py-12 text-center">No eras found.</p>
         )}
       </div>
+
+      {/* Year filter side panel */}
+      <AnimatePresence>
+        {showYearPanel && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[60] bg-black/30"
+              onClick={() => setShowYearPanel(false)}
+            />
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 260 }}
+              className="fixed right-0 top-0 bottom-0 z-[61] w-72 bg-white shadow-xl flex flex-col"
+            >
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                <p className="text-sm font-medium text-black">Filter by Year</p>
+                <div className="flex items-center gap-2">
+                  {filterDecade && (
+                    <button
+                      onClick={() => { analytics.era_decade_filter(null); setFilterDecade(null); }}
+                      className="text-xs text-gray-400 hover:text-black transition-colors"
+                    >
+                      Clear
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowYearPanel(false)}
+                    className="p-1.5 rounded-full hover:bg-gray-50 transition-colors"
+                  >
+                    <X className="w-4 h-4 text-gray-500" strokeWidth={1.5} />
+                  </button>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto py-2">
+                <button
+                  onClick={() => { analytics.era_decade_filter(null); setFilterDecade(null); setShowYearPanel(false); }}
+                  className={`w-full flex items-center justify-between px-5 py-3 text-sm transition-colors ${
+                    !filterDecade ? "text-black font-medium bg-gray-50" : "text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  <span>All Years</span>
+                  {!filterDecade && <Check className="w-3.5 h-3.5 text-black" strokeWidth={2} />}
+                </button>
+                {decades.map((decade) => (
+                  <button
+                    key={decade}
+                    onClick={() => { analytics.era_decade_filter(decade); setFilterDecade(decade); setShowYearPanel(false); }}
+                    className={`w-full flex items-center justify-between px-5 py-3 text-sm transition-colors ${
+                      filterDecade === decade ? "text-black font-medium bg-gray-50" : "text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    <span>{decade}</span>
+                    {filterDecade === decade && <Check className="w-3.5 h-3.5 text-black" strokeWidth={2} />}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Designer filter side panel */}
       <AnimatePresence>
