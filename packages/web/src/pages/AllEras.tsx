@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { api } from "@/api/client";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl, cdnUrl } from "@/utils";
 import ImageWithSkeleton from "@/components/swankk/ImageWithSkeleton";
 import { SlidersHorizontal, X, Check } from "lucide-react";
@@ -150,9 +150,9 @@ export default function AllEras() {
         {filtered.map((era, index) => (
           <motion.div
             key={`${era.designer.slug}-${era.eraIndex}`}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.04 }}
+            transition={{ delay: Math.min(index * 0.04, 0.6) }}
           >
             <div
               className="mb-3 cursor-pointer"
@@ -166,7 +166,14 @@ export default function AllEras() {
                 {era.title}
               </h2>
               <p className="text-sm text-gray-400 mt-0.5">
-                {era.year_range} · {era.designer.name}
+                {era.year_range} ·{" "}
+                <Link
+                  to={createPageUrl(`DesignerWorld?slug=${era.designer.slug}`)}
+                  className="hover:text-black transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {era.designer.name}
+                </Link>
               </p>
             </div>
 

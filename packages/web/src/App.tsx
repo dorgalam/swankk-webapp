@@ -8,6 +8,35 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { BookmarksProvider } from '@/lib/BookmarksContext';
 
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] px-5 gap-4">
+          <p className="text-gray-500 text-sm">Something went wrong.</p>
+          <button
+            onClick={() => { this.setState({ hasError: false }); window.location.reload(); }}
+            className="px-5 py-2 bg-black text-white text-sm rounded-full"
+          >
+            Reload
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function ScrollToTop() {
   const { pathname, search } = useLocation();
   React.useEffect(() => {
@@ -44,7 +73,7 @@ const AuthenticatedApp = () => {
     <Routes>
       <Route path="/" element={
         <LayoutWrapper currentPageName={mainPageKey}>
-          <MainPageComponent />
+          <ErrorBoundary><MainPageComponent /></ErrorBoundary>
         </LayoutWrapper>
       } />
       {Object.entries(Pages).map(([path, Page]) => (
@@ -53,7 +82,7 @@ const AuthenticatedApp = () => {
           path={`/${path}`}
           element={
             <LayoutWrapper currentPageName={path}>
-              <Page />
+              <ErrorBoundary><Page /></ErrorBoundary>
             </LayoutWrapper>
           }
         />
