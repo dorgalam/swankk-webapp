@@ -461,6 +461,20 @@ const adminApi = {
       )
       return results.map((r) => parseDesignerRow(r as unknown as DesignerRow)!)
     },
+    async relatedImages(styleName: string, limit = 20): Promise<{ url: string; entity_type: string; entity_slug: string }[]> {
+      const { results } = await query(
+        `SELECT url, entity_type, entity_slug FROM image_tags WHERE top_styles LIKE ? LIMIT ?`,
+        [`%"${styleName}"%`, limit],
+      )
+      return results as unknown as { url: string; entity_type: string; entity_slug: string }[]
+    },
+    async relatedTrends(styleSlug: string): Promise<Trend[]> {
+      const { results } = await query(
+        `SELECT * FROM trends WHERE related_tags LIKE ? ORDER BY name ASC`,
+        [`%"style:${styleSlug}"%`],
+      )
+      return results.map((r) => parseTrendRow(r as unknown as TrendRow)!)
+    },
   },
 
   trends: {

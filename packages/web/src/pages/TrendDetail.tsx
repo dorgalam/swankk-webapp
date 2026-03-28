@@ -62,8 +62,7 @@ export default function TrendDetail() {
     );
   }
 
-  const originalImages: string[] = trend.images || [];
-  const images = shuffle(originalImages);
+  const images: string[] = trend.images || [];
 
   return (
     <div className="pb-20">
@@ -95,7 +94,7 @@ export default function TrendDetail() {
                 name: trend.name,
                 slug,
                 type: "trend",
-                imageUrl: originalImages[0] || "",
+                imageUrl: images[0] || "",
               }}
               iconColor="black"
             />
@@ -111,7 +110,6 @@ export default function TrendDetail() {
       <div className="px-5 md:px-8">
         <div className="grid grid-cols-2 gap-3 mb-12">
           {images.map((img: string, index: number) => {
-            const realIndex = originalImages.findIndex((o: string) => o === img);
             return (
               <motion.div
                 key={index}
@@ -121,7 +119,7 @@ export default function TrendDetail() {
                 className="group cursor-pointer"
                 onClick={() =>
                   navigate(
-                    createPageUrl(`TrendImageDetail?trendSlug=${slug}&imageIndex=${realIndex}`)
+                    createPageUrl(`TrendImageDetail?trendSlug=${slug}&imageIndex=${index}`)
                   )
                 }
               >

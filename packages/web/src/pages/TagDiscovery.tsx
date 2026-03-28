@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { api } from "@/api/client";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -9,6 +9,7 @@ import RelatedTags from "@/components/swankk/RelatedTags";
 import SaveButton from "@/components/swankk/SaveButton";
 import ImageWithSkeleton from "@/components/swankk/ImageWithSkeleton";
 import { productBookmarkId } from "@/lib/bookmarks";
+import { analytics } from "@/lib/analytics";
 
 async function fetchImagesByTag(tag: string, limit = 24) {
   const res = await fetch(`/api/images/by-tag?tag=${encodeURIComponent(tag)}&limit=${limit}`);
@@ -42,17 +43,20 @@ export default function TagDiscovery() {
     queryFn: () => api.trends.list(),
   });
 
-  // Fetch images directly tagged with this style name (fallback for styles
-  // not tied to any designer's known_for_tags)
+  // Support both ?tag=Name (legacy) and ?slug=slug (new)
+  const tagName = urlParams.get("tag")
+    ?? (tagSlug ? (styles as any[]).find((s: any) => s.slug === tagSlug)?.name ?? tagSlug : null);
+
+  useEffect(() => {
+    if (tagSlug && tagName) analytics.tag_view(tagSlug, tagName);
+  }, [tagSlug, tagName]);
+
+  // Fetch images directly tagged with this style name — MUST come after tagName is declared
   const { data: taggedImages = [] } = useQuery({
     queryKey: ["imagesByTag", tagName],
     queryFn: () => fetchImagesByTag(tagName!),
     enabled: !!tagName,
   });
-
-  // Support both ?tag=Name (legacy) and ?slug=slug (new)
-  const tagName = urlParams.get("tag")
-    ?? (tagSlug ? (styles as any[]).find((s: any) => s.slug === tagSlug)?.name ?? tagSlug : null);
 
   const currentStyle = tagSlug
     ? (styles as any[]).find((s: any) => s.slug === tagSlug)
@@ -103,6 +107,39 @@ export default function TagDiscovery() {
       </div>
     );
   }
+
+  // Compute visual gallery BEFORE JSX return — avoids bundler TDZ issues
+  // caused by `const` declarations inside JSX IIFE expressions.
+  const galleryItems: Array<{ key: string; imgUrl: string; nav: string }> = (() => {
+    if (matchingDesigners.length > 0) {
+      const seed = tagSlug || tagName || "";
+      let h = 0;
+      for (let ci = 0; ci < seed.length; ci++) h = (Math.imul(31, h) + seed.charCodeAt(ci)) | 0;
+      const pool = [...matchingDesigners]
+        .sort((a: any, b: any) => a.slug.localeCompare(b.slug))
+        .flatMap((designer: any) =>
+          (designer.eras || []).flatMap((era: any, eraIdx: number) =>
+            (era.images || []).map((imgUrl: string, imgIdx: number) => ({
+              key: `${designer.slug}-${eraIdx}-${imgIdx}`,
+              imgUrl,
+              nav: createPageUrl(`ImageDetail?slug=${designer.slug}&era=${eraIdx}&image=${imgIdx}`),
+            }))
+          )
+        );
+      const shuffled = [...pool];
+      for (let si = shuffled.length - 1; si > 0; si--) {
+        h = (Math.imul(1664525, h) + 1013904223) | 0;
+        const ji = Math.abs(h) % (si + 1);
+        [shuffled[si], shuffled[ji]] = [shuffled[ji], shuffled[si]];
+      }
+      return shuffled.slice(0, 12);
+    }
+    return (taggedImages as any[]).map((img: any) => ({
+      key: img.url_hash,
+      imgUrl: img.url,
+      nav: tagImageNav(img),
+    }));
+  })();
 
   return (
     <div className="pb-20">
@@ -212,61 +249,32 @@ export default function TagDiscovery() {
           );
         })()}
 
-        {(() => {
-          // Designer-based gallery: stable sorted pool + slug-seeded shuffle
-          if (matchingDesigners.length > 0) {
-            const seed = tagSlug || tagName || "";
-            let h = 0;
-            for (let i = 0; i < seed.length; i++) h = (Math.imul(31, h) + seed.charCodeAt(i)) | 0;
-            const stablePool = [...matchingDesigners]
-              .sort((a: any, b: any) => a.slug.localeCompare(b.slug))
-              .flatMap((designer: any) =>
-                (designer.eras || []).flatMap((era: any, eraIdx: number) =>
-                  (era.images || []).map((imgUrl: string, imgIdx: number) => ({
-                    imgUrl, designerSlug: designer.slug, eraIndex: eraIdx, imageIndex: imgIdx,
-                  }))
-                )
-              );
-            const seeded = [...stablePool];
-            for (let i = seeded.length - 1; i > 0; i--) {
-              h = (Math.imul(1664525, h) + 1013904223) | 0;
-              const j = Math.abs(h) % (i + 1);
-              [seeded[i], seeded[j]] = [seeded[j], seeded[i]];
-            }
-            const gallery = seeded.slice(0, 12);
-            if (gallery.length > 0) return (
-              <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-                <h2 className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium mb-4">Visual Gallery</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                  {gallery.map((item: any, i: number) => (
-                    <div key={i} className="aspect-[3/4] rounded-lg overflow-hidden cursor-pointer group relative"
-                      onClick={() => navigate(createPageUrl(`ImageDetail?slug=${item.designerSlug}&era=${item.eraIndex}&image=${item.imageIndex}`))}>
-                      <ImageWithSkeleton src={cdnUrl(item.imgUrl)} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                    </div>
-                  ))}
+        {galleryItems.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <h2 className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium mb-4">
+              Visual Gallery
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+              {galleryItems.map((item) => (
+                <div
+                  key={item.key}
+                  className="aspect-[3/4] rounded-lg overflow-hidden cursor-pointer group relative"
+                  onClick={() => navigate(item.nav)}
+                >
+                  <ImageWithSkeleton
+                    src={cdnUrl(item.imgUrl)}
+                    alt=""
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
                 </div>
-              </motion.section>
-            );
-          }
-
-          // Fallback: images tagged directly in image_tags DB
-          const tagged = taggedImages as any[];
-          if (tagged.length > 0) return (
-            <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-              <h2 className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium mb-4">Visual Gallery</h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                {tagged.map((img: any, i: number) => (
-                  <div key={img.url_hash || i} className="aspect-[3/4] rounded-lg overflow-hidden cursor-pointer group relative"
-                    onClick={() => navigate(tagImageNav(img))}>
-                    <ImageWithSkeleton src={cdnUrl(img.url)} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                  </div>
-                ))}
-              </div>
-            </motion.section>
-          );
-
-          return null;
-        })()}
+              ))}
+            </div>
+          </motion.section>
+        )}
 
         {allSignaturePieces.length > 0 && (
           <motion.section
@@ -314,7 +322,7 @@ export default function TagDiscovery() {
           </motion.section>
         )}
 
-        {matchingDesigners.length === 0 && (taggedImages as any[]).length === 0 && (
+        {matchingDesigners.length === 0 && galleryItems.length === 0 && (
           <div className="text-center py-12">
             <p className="text-gray-400 mb-4">No content found for this tag yet</p>
             <Link to={createPageUrl("Home")} className="text-sm text-black underline">

@@ -1,23 +1,19 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 
-const AVAILABLE_HOUSES = [
-  "Prada", "Gucci", "Balenciaga", "Valentino", "Versace",
-  "Bottega Veneta", "Saint Laurent", "Fendi", "Miu Miu", "Louis Vuitton",
-];
-
 interface TasteOnboardingProps {
   onComplete: (houses: string[]) => void;
   onSkip: () => void;
+  designers: { name: string; slug: string }[];
 }
 
-export default function TasteOnboarding({ onComplete, onSkip }: TasteOnboardingProps) {
+export default function TasteOnboarding({ onComplete, onSkip, designers }: TasteOnboardingProps) {
   const [selectedHouses, setSelectedHouses] = useState<string[]>([]);
 
   const toggleHouse = (house: string) => {
     if (selectedHouses.includes(house)) {
       setSelectedHouses(selectedHouses.filter((h) => h !== house));
-    } else if (selectedHouses.length < 10) {
+    } else {
       setSelectedHouses([...selectedHouses, house]);
     }
   };
@@ -27,6 +23,8 @@ export default function TasteOnboarding({ onComplete, onSkip }: TasteOnboardingP
       onComplete(selectedHouses);
     }
   };
+
+  const names = designers.length > 0 ? designers.map((d) => d.name) : [];
 
   return (
     <motion.div
@@ -47,11 +45,12 @@ export default function TasteOnboarding({ onComplete, onSkip }: TasteOnboardingP
           <p className="text-base text-black mb-2">Pick a few houses you're into.</p>
           <p className="text-sm text-gray-400 mb-8">We'll use this to shape your Explore.</p>
 
-          <div className="flex flex-wrap gap-2 mb-8">
-            {AVAILABLE_HOUSES.map((house) => (
+          <div className="flex flex-wrap gap-2 mb-8 max-h-64 overflow-y-auto pr-1">
+            {names.map((house) => (
               <button
                 key={house}
                 onClick={() => toggleHouse(house)}
+                style={{ touchAction: 'manipulation' }}
                 className={`px-4 py-2 rounded-full text-sm transition-all ${
                   selectedHouses.includes(house)
                     ? "bg-black text-white"
@@ -74,7 +73,7 @@ export default function TasteOnboarding({ onComplete, onSkip }: TasteOnboardingP
               }`}
             >
               Continue
-              {selectedHouses.length < 1 && ` (select ${1 - selectedHouses.length} more)`}
+              {selectedHouses.length < 1 && ` (select at least 1)`}
             </button>
 
             <div className="flex gap-4 justify-center">

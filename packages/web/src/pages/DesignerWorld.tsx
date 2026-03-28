@@ -9,8 +9,8 @@ import QuickFacts from "@/components/swankk/QuickFacts";
 import ErasCarousel from "@/components/swankk/ErasCarousel";
 import SignaturePieces from "@/components/swankk/SignaturePieces";
 import SaveButton from "@/components/swankk/SaveButton";
-import RelatedTags from "@/components/swankk/RelatedTags";
 import ImageWithSkeleton from "@/components/swankk/ImageWithSkeleton";
+import { analytics } from "@/lib/analytics";
 
 export default function DesignerWorld() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -27,21 +27,6 @@ export default function DesignerWorld() {
     queryFn: () => api.designers.filter({ slug }),
   });
 
-  const { data: allDesigners = [] } = useQuery({
-    queryKey: ["designers"],
-    queryFn: () => api.designers.list(),
-  });
-
-  const { data: allStyles = [] } = useQuery({
-    queryKey: ["styles"],
-    queryFn: () => api.styles.list(),
-  });
-
-  const { data: allTrends = [] } = useQuery({
-    queryKey: ["trends"],
-    queryFn: () => api.trends.list(),
-  });
-
   const designer = (designers as any[])[0];
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
 
@@ -50,6 +35,10 @@ export default function DesignerWorld() {
       setAudio(new Audio(designer.audio_url));
     }
   }, [designer]);
+
+  React.useEffect(() => {
+    if (designer) analytics.designer_view(slug, designer.name);
+  }, [designer, slug]);
 
   const handlePlay = () => {
     if (audio) {
@@ -159,17 +148,6 @@ export default function DesignerWorld() {
         <SignaturePieces designer={designer} />
         <div className="h-px bg-gray-100" />
         <ErasCarousel designer={designer} />
-        {(designer.related_tags || []).length > 0 && (
-          <>
-            <div className="h-px bg-gray-100" />
-            <RelatedTags
-              relatedTags={designer.related_tags || []}
-              allDesigners={allDesigners as any[]}
-              allStyles={allStyles as any[]}
-              allTrends={allTrends as any[]}
-            />
-          </>
-        )}
       </div>
     </div>
   );

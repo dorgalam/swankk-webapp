@@ -46,6 +46,20 @@ export const analytics = {
   designer_audio_play: (slug: string, name: string) =>
     track('designer_audio_play', { designer_slug: slug, designer_name: name }),
 
+  // ── Content page views ────────────────────────────────────────
+  designer_view: (slug: string, name: string) =>
+    track('designer_view', { designer_slug: slug, designer_name: name }),
+  era_view: (designer_slug: string, era_name: string) =>
+    track('era_view', { designer_slug, era_name }),
+  tag_view: (tag_slug: string, tag_name: string) =>
+    track('tag_view', { tag_slug, tag_name }),
+
+  // ── Taste onboarding ──────────────────────────────────────────
+  onboarding_shown: () => track('onboarding_shown'),
+  onboarding_complete: (houses_count: number) =>
+    track('onboarding_complete', { houses_count }),
+  onboarding_skip: () => track('onboarding_skip'),
+
   // ── Era filters ───────────────────────────────────────────────
   era_decade_filter: (decade: string | null) =>
     track('era_decade_filter', { decade: decade ?? 'all' }),

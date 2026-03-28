@@ -7,6 +7,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl, cdnUrl } from "@/utils";
 import SaveButton from "@/components/swankk/SaveButton";
 import ImageWithSkeleton from "@/components/swankk/ImageWithSkeleton";
+import { analytics } from "@/lib/analytics";
 
 export default function EraGallery() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -27,6 +28,10 @@ export default function EraGallery() {
   const designer = designers[0] as any;
   const era = designer?.eras?.[eraIndex];
   const eraImages: string[] = era?.images || [];
+
+  useEffect(() => {
+    if (designer && era) analytics.era_view(slug, era.title);
+  }, [designer, era, slug]);
 
   const allDesignerImages = designer?.eras?.flatMap((e: any, idx: number) => {
     if (idx === eraIndex) return [];
@@ -104,7 +109,13 @@ export default function EraGallery() {
             />
           </div>
           <p className="text-sm text-gray-400 mb-4">
-            {era.year_range} · {designer.name}
+            {era.year_range} ·{" "}
+            <Link
+              to={createPageUrl(`DesignerWorld?slug=${slug}`)}
+              className="hover:text-black transition-colors"
+            >
+              {designer.name}
+            </Link>
           </p>
           {era.description && (
             <p className="text-gray-600 text-sm md:text-base leading-relaxed max-w-2xl">

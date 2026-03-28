@@ -8,6 +8,7 @@
     "dev:full": "npx wrangler pages dev --d1=DB -- npm run dev",
     "build": "vite build",
     "deploy": "npx wrangler pages deploy dist",
+    "deploy:staging": "npx wrangler pages deploy dist --branch=staging",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test:e2e": "npx playwright test",

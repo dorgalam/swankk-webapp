@@ -10,6 +10,7 @@
     "dev:remote": "VITE_API_BASE=https://swankk.pages.dev vite",
     "build": "vite build",
     "deploy": "npx wrangler pages deploy dist",
+    "deploy:staging": "npx wrangler pages deploy dist --branch=staging",
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit",

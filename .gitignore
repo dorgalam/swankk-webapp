@@ -2,6 +2,19 @@
 .env.*
 .dev.vars
 google_signing_secret.json
+swankk.json
+
+# Screenshots / debug images
+*.png
+
+# Claude Code
+.claude/
+
+# DB backups
+backups/
+
+# Playwright artifacts
+.playwright/
 
 node_modules/
 dist/

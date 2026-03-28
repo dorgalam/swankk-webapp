@@ -7,6 +7,7 @@ import { createPageUrl, cdnUrl, shuffle } from "@/utils";
 import TasteOnboarding from "@/components/swankk/TasteOnboarding";
 import TasteEditModal from "@/components/swankk/TasteEditModal";
 import { Pencil } from "lucide-react";
+import { analytics } from "@/lib/analytics";
 
 export default function Home() {
   
@@ -34,6 +35,7 @@ export default function Home() {
 
     if (hasSeenLanding && !hasSeenOnboarding && !savedTaste) {
       setShowOnboarding(true);
+      analytics.onboarding_shown();
     }
 
     if (savedTaste) {
@@ -42,6 +44,7 @@ export default function Home() {
   }, [hasSeenLanding]);
 
   const handleOnboardingComplete = (selectedHouses: string[]) => {
+    analytics.onboarding_complete(selectedHouses.length);
     setUserTaste(selectedHouses);
     localStorage.setItem("swankk_taste", JSON.stringify(selectedHouses));
     localStorage.setItem("swankk_onboarding_seen", "true");
@@ -49,6 +52,7 @@ export default function Home() {
   };
 
   const handleOnboardingSkip = () => {
+    analytics.onboarding_skip();
     localStorage.setItem("swankk_onboarding_seen", "true");
     setShowOnboarding(false);
   };
@@ -174,7 +178,7 @@ if (!hasSeenLanding) {
 
         {filteredTrends.length > 0 && (
           <div className="mb-16">
-            <p className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium mb-8">
+            <p className="text-xs tracking-[0.2em] uppercase text-gray-400 font-medium mb-8">
               Current Trends
             </p>
 
@@ -221,7 +225,7 @@ if (!hasSeenLanding) {
 
         {filteredEras.length > 0 && (
           <div>
-            <p className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium mb-8">
+            <p className="text-xs tracking-[0.2em] uppercase text-gray-400 font-medium mb-8">
               Fashion Through Time
             </p>
 

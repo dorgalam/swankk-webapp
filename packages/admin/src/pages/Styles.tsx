@@ -8,8 +8,13 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import SaveIcon from '@mui/icons-material/Save'
+import ImageIcon from '@mui/icons-material/Image'
+import TrendingUpIcon from '@mui/icons-material/TrendingUp'
+import PeopleIcon from '@mui/icons-material/People'
 import adminApi, { STYLES_LIST } from '@/api/adminApi'
 import type { Style, Designer, Trend } from '@/api/adminApi'
+
+type ExpandedView = 'designers' | 'images' | 'trends' | null
 
 interface StyleRowProps {
   style: Style
@@ -18,7 +23,7 @@ interface StyleRowProps {
 }
 
 function StyleRow({ style, allOptions, onSave }: StyleRowProps) {
-  const [expanded, setExpanded] = useState(false)
+  const [expandedView, setExpandedView] = useState<ExpandedView>(null)
   const [description, setDescription] = useState(style.description || '')
   const [relatedTags, setRelatedTags] = useState<string[]>(style.related_tags || [])
   const [saving, setSaving] = useState(false)
@@ -27,7 +32,19 @@ function StyleRow({ style, allOptions, onSave }: StyleRowProps) {
   const { data: relatedDesigners, isLoading: loadingDesigners } = useQuery<Designer[]>({
     queryKey: ['style-designers', style.name],
     queryFn: () => adminApi.styles.relatedDesigners(style.name),
-    enabled: expanded,
+    enabled: expandedView === 'designers',
+  })
+
+  const { data: relatedImages, isLoading: loadingImages } = useQuery<{ url: string; entity_type: string; entity_slug: string }[]>({
+    queryKey: ['style-images', style.name],
+    queryFn: () => adminApi.styles.relatedImages(style.name),
+    enabled: expandedView === 'images',
+  })
+
+  const { data: relatedTrends, isLoading: loadingTrends } = useQuery<Trend[]>({
+    queryKey: ['style-trends', style.slug],
+    queryFn: () => adminApi.styles.relatedTrends(style.slug),
+    enabled: expandedView === 'trends' && !!style.slug,
   })
 
   const handleSave = async () => {
@@ -39,6 +56,12 @@ function StyleRow({ style, allOptions, onSave }: StyleRowProps) {
       setSaving(false)
     }
   }
+
+  const toggleView = (view: ExpandedView) => {
+    setExpandedView(expandedView === view ? null : view)
+  }
+
+  const isExpanded = expandedView !== null
 
   return (
     <>
@@ -108,45 +131,144 @@ function StyleRow({ style, allOptions, onSave }: StyleRowProps) {
           )}
           <Button
             size="small"
-            endIcon={expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-            onClick={() => setExpanded(!expanded)}
+            startIcon={<PeopleIcon />}
+            endIcon={expandedView === 'designers' ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+            onClick={() => toggleView('designers')}
             disabled={(style.designer_count ?? 0) === 0}
+            sx={{ mr: 0.5 }}
           >
             Designers
+          </Button>
+          <Button
+            size="small"
+            startIcon={<ImageIcon />}
+            endIcon={expandedView === 'images' ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+            onClick={() => toggleView('images')}
+          >
+            Images
+          </Button>
+          <Button
+            size="small"
+            startIcon={<TrendingUpIcon />}
+            endIcon={expandedView === 'trends' ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+            onClick={() => toggleView('trends')}
+            sx={{ ml: 0.5 }}
+          >
+            Trends
           </Button>
         </TableCell>
       </TableRow>
 
-      {expanded && (
+      {isExpanded && (
         <TableRow>
           <TableCell colSpan={5} sx={{ py: 0, bgcolor: 'action.hover' }}>
-            <Collapse in={expanded}>
-              <Box sx={{ py: 1, px: 2 }}>
-                {loadingDesigners ? (
-                  <Box sx={{ py: 2, display: 'flex', justifyContent: 'center' }}>
-                    <CircularProgress size={20} />
-                  </Box>
-                ) : relatedDesigners?.length === 0 ? (
-                  <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>
-                    No designers tagged with this style.
-                  </Typography>
-                ) : (
-                  <List dense disablePadding>
-                    {relatedDesigners?.map((d, i) => (
-                      <Box key={d.id}>
-                        {i > 0 && <Divider />}
-                        <ListItem disablePadding sx={{ py: 0.5 }}>
-                          <ListItemText
-                            primary={d.name}
-                            secondary={d.slug}
-                            primaryTypographyProps={{ variant: 'body2', fontWeight: 500 }}
-                            secondaryTypographyProps={{ variant: 'caption' }}
-                          />
-                        </ListItem>
-                      </Box>
-                    ))}
-                  </List>
+            <Collapse in={isExpanded}>
+              <Box sx={{ py: 2, px: 2 }}>
+
+                {/* Designers section */}
+                {expandedView === 'designers' && (
+                  loadingDesigners ? (
+                    <Box sx={{ py: 2, display: 'flex', justifyContent: 'center' }}>
+                      <CircularProgress size={20} />
+                    </Box>
+                  ) : relatedDesigners?.length === 0 ? (
+                    <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>
+                      No designers tagged with this style.
+                    </Typography>
+                  ) : (
+                    <List dense disablePadding>
+                      {relatedDesigners?.map((d, i) => (
+                        <Box key={d.id}>
+                          {i > 0 && <Divider />}
+                          <ListItem disablePadding sx={{ py: 0.5 }}>
+                            <ListItemText
+                              primary={d.name}
+                              secondary={d.slug}
+                              primaryTypographyProps={{ variant: 'body2', fontWeight: 500 }}
+                              secondaryTypographyProps={{ variant: 'caption' }}
+                            />
+                          </ListItem>
+                        </Box>
+                      ))}
+                    </List>
+                  )
                 )}
+
+                {/* Images section */}
+                {expandedView === 'images' && (
+                  loadingImages ? (
+                    <Box sx={{ py: 2, display: 'flex', justifyContent: 'center' }}>
+                      <CircularProgress size={20} />
+                    </Box>
+                  ) : !relatedImages?.length ? (
+                    <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>
+                      No images tagged with this style yet.
+                    </Typography>
+                  ) : (
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5, display: 'block' }}>
+                        {relatedImages.length} image{relatedImages.length !== 1 ? 's' : ''} tagged with "{style.name}"
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                        {relatedImages.map((img, i) => (
+                          <Box
+                            key={i}
+                            component="a"
+                            href={img.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            sx={{ position: 'relative', width: 80, height: 100, borderRadius: 1, overflow: 'hidden', flexShrink: 0 }}
+                          >
+                            <Box
+                              component="img"
+                              src={img.url}
+                              alt={img.entity_slug}
+                              sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                            />
+                            <Box sx={{
+                              position: 'absolute', bottom: 0, left: 0, right: 0,
+                              bgcolor: 'rgba(0,0,0,0.55)', px: 0.5, py: 0.25,
+                            }}>
+                              <Typography variant="caption" sx={{ color: 'white', fontSize: '0.6rem', lineHeight: 1.2, display: 'block' }}>
+                                {img.entity_slug}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        ))}
+                      </Box>
+                    </Box>
+                  )
+                )}
+
+                {/* Trends section */}
+                {expandedView === 'trends' && (
+                  loadingTrends ? (
+                    <Box sx={{ py: 2, display: 'flex', justifyContent: 'center' }}>
+                      <CircularProgress size={20} />
+                    </Box>
+                  ) : !relatedTrends?.length ? (
+                    <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>
+                      No trends linked to this style. Use "Related Tags" above to link trends.
+                    </Typography>
+                  ) : (
+                    <List dense disablePadding>
+                      {relatedTrends?.map((t, i) => (
+                        <Box key={t.id}>
+                          {i > 0 && <Divider />}
+                          <ListItem disablePadding sx={{ py: 0.5 }}>
+                            <ListItemText
+                              primary={t.name}
+                              secondary={t.slug}
+                              primaryTypographyProps={{ variant: 'body2', fontWeight: 500 }}
+                              secondaryTypographyProps={{ variant: 'caption' }}
+                            />
+                          </ListItem>
+                        </Box>
+                      ))}
+                    </List>
+                  )
+                )}
+
               </Box>
             </Collapse>
           </TableCell>
