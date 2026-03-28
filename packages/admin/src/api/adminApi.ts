@@ -131,6 +131,52 @@ interface TrendProduct {
   link: string
 }
 
+interface Retailer {
+  name: string
+  image_url: string
+  price: string
+  link: string
+}
+
+interface ProductRow {
+  id: number
+  name: string
+  slug: string
+  brand: string
+  image_url: string
+  images: string | string[]
+  designer_id: number | null
+  designer_name: string
+  trend_id: number | null
+  section: string
+  cheapest_price: string
+  retailers: string | Retailer[]
+  resolved_designer_name?: string
+  trend_name?: string
+  created_at?: string
+  updated_at?: string
+}
+
+interface Product extends Omit<ProductRow, 'images' | 'retailers'> {
+  images: string[]
+  retailers: Retailer[]
+}
+
+interface ProductInput {
+  name: string
+  slug?: string
+  brand?: string
+  image_url?: string
+  images?: string[]
+  designer_id?: number | null
+  designer_name?: string
+  trend_id?: number | null
+  section?: string
+  cheapest_price?: string
+  retailers?: Retailer[]
+  [key: string]: unknown
+}
+
 interface ColorProduct {
   name: string
   image_url: string
@@ -287,6 +333,15 @@ function parseTrendRow(row: TrendRow | undefined): Trend | null {
     images: JSON.parse((row.images as string) || '[]'),
     products: JSON.parse((row.products as string) || '[]'),
     related_tags: JSON.parse((row.related_tags as string) || '[]'),
+  }
+}
+
+function parseProductRow(row: ProductRow | undefined): Product | null {
+  if (!row) return null
+  return {
+    ...row,
+    images: JSON.parse((row.images as string) || '[]'),
+    retailers: JSON.parse((row.retailers as string) || '[]'),
   }
 }
 
@@ -650,6 +705,75 @@ const adminApi = {
     },
   },
 
+  products: {
+    async list(): Promise<Product[]> {
+      const { results } = await query(`
+        SELECT p.*,
+          COALESCE(d.name, p.designer_name) AS resolved_designer_name,
+          t.name AS trend_name
+        FROM products p
+        LEFT JOIN designers d ON p.designer_id = d.id
+        LEFT JOIN trends t ON p.trend_id = t.id
+        ORDER BY p.created_at DESC
+      `)
+      return results.map((r) => parseProductRow(r as unknown as ProductRow)!)
+    },
+    async getById(id: string | number): Promise<Product | null> {
+      const { results } = await query(`
+        SELECT p.*,
+          COALESCE(d.name, p.designer_name) AS resolved_designer_name,
+          t.name AS trend_name
+        FROM products p
+        LEFT JOIN designers d ON p.designer_id = d.id
+        LEFT JOIN trends t ON p.trend_id = t.id
+        WHERE p.id = ?
+      `, [id])
+      return parseProductRow(results[0] as unknown as ProductRow)
+    },
+    async create(data: ProductInput) {
+      const slug = data.slug || slugify(data.name)
+      const { meta } = await query(
+        `INSERT INTO products (name, slug, brand, image_url, images, designer_id, designer_name, trend_id, section, cheapest_price, retailers)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          data.name, slug, data.brand || '', data.image_url || '',
+          JSON.stringify(data.images || []),
+          data.designer_id ?? null, data.designer_name || '',
+          data.trend_id ?? null,
+          data.section || '',
+          data.cheapest_price || '',
+          JSON.stringify(data.retailers || []),
+        ],
+      )
+      return meta
+    },
+    async update(id: string | number, data: ProductInput) {
+      const { meta } = await query(
+        `UPDATE products SET
+          name = ?, brand = ?, image_url = ?, images = ?,
+          designer_id = ?, designer_name = ?, trend_id = ?,
+          section = ?, cheapest_price = ?, retailers = ?,
+          updated_at = datetime('now')
+         WHERE id = ?`,
+        [
+          data.name, data.brand || '', data.image_url || '',
+          JSON.stringify(data.images || []),
+          data.designer_id ?? null, data.designer_name || '',
+          data.trend_id ?? null,
+          data.section || '',
+          data.cheapest_price || '',
+          JSON.stringify(data.retailers || []),
+          id,
+        ],
+      )
+      return meta
+    },
+    async delete(id: number) {
+      const { meta } = await query('DELETE FROM products WHERE id = ?', [id])
+      return meta
+    },
+  },
+
   imageTags: {
     async list(entityType?: string, limit = 50, offset = 0): Promise<ImageTag[]> {
       const where = entityType ? `WHERE entity_type = '${entityType}'` : '';
@@ -713,5 +837,6 @@ export type {
   Color, ColorInput, ColorProduct, ColorRow,
   Designer, DesignerInput, DesignerRequest, DesignerRow, Era, Style,
   ImageTag, ImageTagRow,
-  Piece, StatCounts, Tag, Trend, TrendInput, TrendProduct, User,
+  Piece, Product, ProductInput, ProductRow, Retailer,
+  StatCounts, Tag, Trend, TrendInput, TrendProduct, User,
 }

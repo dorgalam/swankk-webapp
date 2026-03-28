@@ -12,6 +12,7 @@ import ColorLensIcon from '@mui/icons-material/ColorLens'
 import ImageIcon from '@mui/icons-material/Image'
 import LabelIcon from '@mui/icons-material/Label'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
+import ShoppingBagIcon from '@mui/icons-material/ShoppingBag'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 
 const DRAWER_WIDTH = 240
@@ -22,6 +23,7 @@ const navItems = [
   { label: 'Styles', icon: <LabelIcon />, path: '/styles' },
   { label: 'Colors', icon: <ColorLensIcon />, path: '/colors' },
   { label: 'Trends', icon: <TrendingUpIcon />, path: '/trends' },
+  { label: 'Products', icon: <ShoppingBagIcon />, path: '/products' },
   { label: 'Image Tags', icon: <ImageIcon />, path: '/image-tags' },
   { label: 'Requests', icon: <InboxIcon />, path: '/requests' },
   { label: 'Users', icon: <PeopleIcon />, path: '/users' },

@@ -53,7 +53,17 @@ export default function Shop() {
     queryFn: () => api.designers.list(),
   });
 
-  const isLoading = trendsLoading || designersLoading;
+  const { data: collabProducts = [], isLoading: collabLoading } = useQuery({
+    queryKey: ["products-collaborations"],
+    queryFn: () => api.products.filter({ section: "collaborations" }),
+  });
+
+  const { data: iconicProducts = [], isLoading: iconicLoading } = useQuery({
+    queryKey: ["products-iconic"],
+    queryFn: () => api.products.filter({ section: "iconic" }),
+  });
+
+  const isLoading = trendsLoading || designersLoading || collabLoading || iconicLoading;
 
   if (isLoading) {
     return (
@@ -70,6 +80,12 @@ export default function Shop() {
   const designersWithProducts = (designers as any[])
     .filter((d: any) => (d.signature_pieces || []).length > 0)
     .slice(0, 4);
+
+  const collabs = collabProducts as any[];
+  const iconics = iconicProducts as any[];
+
+  const hasContent = trendsWithProducts.length > 0 || designersWithProducts.length > 0
+    || collabs.length > 0 || iconics.length > 0;
 
   return (
     <div className="pb-20">
@@ -143,7 +159,54 @@ export default function Shop() {
         </div>
       )}
 
-      {trendsWithProducts.length === 0 && designersWithProducts.length === 0 && (
+      {/* Collaborations */}
+      {collabs.length > 0 && (
+        <div className="mb-14">
+          <p className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium mb-8 px-5 md:px-8">
+            Collaborations
+          </p>
+          <HorizontalScroll>
+            {collabs.map((p: any) => (
+              <ProductCard key={p.id} product={{ name: p.name, image_url: p.image_url, link: p.image_url }} contextType="trend" contextSlug="collaborations" />
+            ))}
+          </HorizontalScroll>
+        </div>
+      )}
+
+      {/* Iconic Pieces */}
+      {iconics.length > 0 && (
+        <div className="mb-14">
+          <p className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium mb-8 px-5 md:px-8">
+            Iconic Pieces
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 px-5 md:px-8">
+            {iconics.map((p: any) => (
+              <div
+                key={p.id}
+                className="cursor-pointer group"
+                onClick={() => navigate(createPageUrl(`IconicProduct?id=${p.id}`))}
+              >
+                <div className="aspect-[3/4] rounded-xl overflow-hidden bg-gray-50 mb-2 relative">
+                  <ImageWithSkeleton
+                    src={cdnUrl(p.image_url)}
+                    alt={p.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+                <p className="text-xs text-black font-medium line-clamp-2 leading-tight">{p.name}</p>
+                {p.resolved_designer_name && (
+                  <p className="text-xs text-gray-400 mt-0.5">{p.resolved_designer_name}</p>
+                )}
+                {p.cheapest_price && (
+                  <p className="text-xs text-gray-500 mt-0.5">From {p.cheapest_price}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!hasContent && (
         <div className="text-center py-16 px-5">
           <p className="text-sm text-gray-400">No products available yet.</p>
         </div>

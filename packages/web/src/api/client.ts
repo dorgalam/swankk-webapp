@@ -82,6 +82,14 @@ export const api = {
     update: (id: number | string, data: Record<string, unknown>) => request(`/colors/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: number | string) => request(`/colors/${id}`, { method: 'DELETE' }),
   },
+  products: {
+    list: () => request('/products'),
+    filter: (params: Record<string, string>) => {
+      const qs = new URLSearchParams(params).toString();
+      return request(`/products?${qs}`);
+    },
+    get: (id: number | string) => request(`/products/${id}`),
+  },
   designerRequests: {
     create: (data: Record<string, unknown>) => request('/designer-requests', { method: 'POST', body: JSON.stringify(data) }),
   },

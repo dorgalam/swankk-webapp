@@ -36,6 +36,12 @@ export default function TrendDetail() {
 
   const trend = (trends as any[])[0];
 
+  const { data: trendProducts = [] } = useQuery({
+    queryKey: ["products-by-trend", trend?.id],
+    queryFn: () => api.products.filter({ trend_id: String(trend.id) }),
+    enabled: !!trend?.id,
+  });
+
   React.useEffect(() => {
     if (trend) analytics.trend_view(slug, trend.name);
   }, [slug, trend?.name]);
@@ -169,7 +175,7 @@ export default function TrendDetail() {
         )}
 
         {/* Products */}
-        {(trend.products || []).length > 0 && (
+        {((trend.products || []).length > 0 || (trendProducts as any[]).length > 0) && (
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -182,7 +188,7 @@ export default function TrendDetail() {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {(trend.products as any[]).map((product: any, i: number) => (
                 <a
-                  key={i}
+                  key={`legacy-${i}`}
                   href={product.link || product.url || product.farfetch_url}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -213,6 +219,27 @@ export default function TrendDetail() {
                   <p className="text-sm text-black font-medium line-clamp-2">{product.name}</p>
                   {product.brand && <p className="text-xs text-gray-400 mt-0.5">{product.brand}</p>}
                   {product.price && <p className="text-xs text-gray-500 mt-0.5">{product.price}</p>}
+                </a>
+              ))}
+              {(trendProducts as any[]).map((p: any) => (
+                <a
+                  key={`product-${p.id}`}
+                  href={p.section === 'iconic' ? createPageUrl(`IconicProduct?id=${p.id}`) : (p.retailers?.[0]?.link || '#')}
+                  target={p.section !== 'iconic' ? '_blank' : undefined}
+                  rel="noopener noreferrer"
+                  onClick={() => analytics.product_click(p.name, 'trend', slug)}
+                  className="group"
+                >
+                  <div className="relative aspect-square rounded-xl overflow-hidden mb-2 bg-gray-50">
+                    <ImageWithSkeleton
+                      src={cdnUrl(p.image_url)}
+                      alt={p.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  </div>
+                  <p className="text-sm text-black font-medium line-clamp-2">{p.name}</p>
+                  {p.brand && <p className="text-xs text-gray-400 mt-0.5">{p.brand}</p>}
+                  {p.cheapest_price && <p className="text-xs text-gray-500 mt-0.5">From {p.cheapest_price}</p>}
                 </a>
               ))}
             </div>

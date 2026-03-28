@@ -28,6 +28,12 @@ export default function DesignerWorld() {
   });
 
   const designer = (designers as any[])[0];
+
+  const { data: products = [] } = useQuery({
+    queryKey: ["products-by-designer", designer?.id],
+    queryFn: () => api.products.filter({ designer_id: String(designer.id) }),
+    enabled: !!designer?.id,
+  });
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
 
   React.useEffect(() => {
@@ -146,6 +152,41 @@ export default function DesignerWorld() {
         <QuickFacts designer={designer} />
         <div className="h-px bg-gray-100" />
         <SignaturePieces designer={designer} />
+        {(products as any[]).length > 0 && (
+          <>
+            <div className="h-px bg-gray-100" />
+            <section>
+              <h2 className="text-[11px] tracking-[0.2em] uppercase text-gray-400 font-medium mb-4">
+                Shop
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {(products as any[]).map((p: any) => (
+                  <a
+                    key={p.id}
+                    href={p.section === 'iconic' ? undefined : (p.retailers?.[0]?.link || '#')}
+                    onClick={p.section === 'iconic'
+                      ? (e) => { e.preventDefault(); window.location.href = `/IconicProduct?id=${p.id}`; }
+                      : undefined}
+                    target={p.section !== 'iconic' ? '_blank' : undefined}
+                    rel="noopener noreferrer"
+                    className="group cursor-pointer"
+                  >
+                    <div className="aspect-[3/4] rounded-xl overflow-hidden bg-gray-50 mb-2 relative">
+                      <ImageWithSkeleton
+                        src={cdnUrl(p.image_url)}
+                        alt={p.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    </div>
+                    <p className="text-sm text-black font-medium line-clamp-2">{p.name}</p>
+                    {p.brand && <p className="text-xs text-gray-400 mt-0.5">{p.brand}</p>}
+                    {p.cheapest_price && <p className="text-xs text-gray-500 mt-0.5">From {p.cheapest_price}</p>}
+                  </a>
+                ))}
+              </div>
+            </section>
+          </>
+        )}
         <div className="h-px bg-gray-100" />
         <ErasCarousel designer={designer} />
       </div>

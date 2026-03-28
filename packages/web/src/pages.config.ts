@@ -10,6 +10,7 @@ import ContentEditor from './pages/ContentEditor';
 import DesignerWorld from './pages/DesignerWorld';
 import EraGallery from './pages/EraGallery';
 import Home from './pages/Home';
+import IconicProduct from './pages/IconicProduct';
 import ImageDetail from './pages/ImageDetail';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
@@ -34,6 +35,7 @@ export const PAGES: Record<string, React.ComponentType> = {
     "DesignerWorld": DesignerWorld,
     "EraGallery": EraGallery,
     "Home": Home,
+    "IconicProduct": IconicProduct,
     "ImageDetail": ImageDetail,
     "Landing": Landing,
     "Login": Login,

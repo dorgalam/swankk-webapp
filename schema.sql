@@ -183,7 +183,29 @@ CREATE TABLE IF NOT EXISTS bookmarks (
 
 CREATE INDEX IF NOT EXISTS idx_bookmarks_user ON bookmarks(user_id, category);
 
+CREATE TABLE IF NOT EXISTS products (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  brand TEXT DEFAULT '',
+  image_url TEXT DEFAULT '',
+  images TEXT DEFAULT '[]',
+  designer_id INTEGER,
+  designer_name TEXT DEFAULT '',
+  trend_id INTEGER,
+  section TEXT DEFAULT '',
+  cheapest_price TEXT DEFAULT '',
+  retailers TEXT DEFAULT '[]',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_products_designer ON products(designer_id);
+CREATE INDEX IF NOT EXISTS idx_products_trend ON products(trend_id);
+CREATE INDEX IF NOT EXISTS idx_products_section ON products(section);
+
 -- Migration history (already applied to remote DB):
+-- CREATE TABLE IF NOT EXISTS products (...) + indexes -- run schema.sql products block against D1
 -- ALTER TABLE keywords RENAME TO styles;
 -- ALTER TABLE trends DROP COLUMN keywords;
 -- ALTER TABLE designers ADD COLUMN related_tags TEXT NOT NULL DEFAULT '[]';
