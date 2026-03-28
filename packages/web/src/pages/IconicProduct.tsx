@@ -17,6 +17,7 @@ export default function IconicProduct() {
     queryKey: ["iconic-product", id],
     queryFn: () => api.products.get(id),
     enabled: !!id,
+    retry: false,
   });
 
   if (isLoading) {
