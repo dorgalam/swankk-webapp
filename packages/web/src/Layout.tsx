@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import TopBar from "@/components/swankk/TopBar";
 
 export default function Layout({ children, currentPageName }: { children: React.ReactNode; currentPageName?: string }) {
@@ -35,6 +36,13 @@ export default function Layout({ children, currentPageName }: { children: React.
       `}</style>
       {!isLandingPage && <TopBar currentPageName={currentPageName} />}
       <main>{children}</main>
+      {!isLandingPage && (
+        <footer className="px-5 md:px-8 py-6 border-t border-gray-100">
+          <Link to="/terms" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+            Terms & Conditions
+          </Link>
+        </footer>
+      )}
     </div>
   );
 }

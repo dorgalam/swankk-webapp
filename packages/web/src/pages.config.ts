@@ -18,6 +18,7 @@ import Profile from './pages/Profile';
 import Saved from './pages/Saved';
 import SharedCollection from './pages/SharedCollection';
 import TagDiscovery from './pages/TagDiscovery';
+import TermsAndConditions from './pages/TermsAndConditions';
 import TrendDetail from './pages/TrendDetail';
 import TrendImageDetail from './pages/TrendImageDetail';
 import __Layout from './Layout';
@@ -43,6 +44,7 @@ export const PAGES: Record<string, React.ComponentType> = {
     "Saved": Saved,
     "SharedCollection": SharedCollection,
     "TagDiscovery": TagDiscovery,
+    "terms": TermsAndConditions,
     "TrendDetail": TrendDetail,
     "TrendImageDetail": TrendImageDetail,
 }
